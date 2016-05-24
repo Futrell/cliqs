@@ -36,7 +36,8 @@ def get_attr(attr):
     def get(s, n):
         return s.node[n].get(attr)
     return get
-    
+
+# phrase_of : DiGraph x Int -> [Int]
 def phrase_of(s, word_id):
     words = sorted(nx.descendants(s, word_id))
     bisect.insort(words, word_id)
@@ -145,7 +146,7 @@ def show_latex(doctext, cleanup=False):
             #    sh.clean_tex()
             #except sh.ErrorReturnCode_1:
             #    pass
-
+            
 def show_sentence_latex(s, **kwds):
     return show_latex(to_latex_document(sentence_to_latex(s, **kwds)))
 
@@ -153,6 +154,7 @@ def show_sentences_latex(ss, **kwds):
      text = "\n".join(sentence_to_latex(s, **kwds) for s in ss)
      show_latex(to_latex_document(text))
 
+# roots_of : DiGraph -> Iterator Int     
 def roots_of(s):
     for node, in_degree in s.in_degree().items():
         if in_degree == 0:
@@ -168,6 +170,7 @@ def test_roots_of():
     g = nx.DiGraph([(0, 1), (2, 1)])
     assert sorted(roots_of(g)) == [0, 2]
 
+# root_of : DiGraph -> Int    
 def root_of(s):
     return the_only(roots_of(s))
 
@@ -184,6 +187,8 @@ Gap = namedtuple('Gap', ['code'])
 def is_gap(x):
     return isinstance(x, Gap)
 
+
+# lowest_common_ancestor : DiGraph x Int x Int -> Int
 def lowest_common_ancestor(s, n1, n2):
     s_u = s.to_undirected()
     path = nx.shortest_path(s_u, n1, n2)
@@ -286,9 +291,11 @@ def test_num_words_in_phrase():
     assert num_words_in_phrase(t, 2) == 2
     assert num_words_in_phrase(t, 3) == 1
 
+# head_of : DiGraph x Int -> Int    
 def head_of(s, word_id):
     return the_only(heads_of(s, word_id))
 
+# get_head_of : DiGraph x Int -> Maybe Int
 def get_head_of(s, word_id, default=None):
     heads = heads_of(s, word_id)
     if heads:

@@ -10,6 +10,7 @@ from collections import namedtuple
 
 import pyrsistent as pyr
 import networkx as nx
+import requests
 
 import deptransform
 

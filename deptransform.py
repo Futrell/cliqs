@@ -243,10 +243,6 @@ def test_reverse_content_head_complex():
         (4, 5, 'case'),
     }
 
-    s = nx.DiGraph([])
-        
-Rel = str
-
 def lift_head(sentence, n1, n2, high_rels):
     """ Given a sentence with dependencies of form h -a-> n1 -b-> n2, 
     lift n2 to be the head of n1, as in h -a-> n2 -b-> n1. 
