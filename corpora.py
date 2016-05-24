@@ -11,7 +11,8 @@ try:
     username = os.getlogin()
 except OSError:
     username = None
-    
+
+# Replace with your username and local directory to make things speedier    
 if username == 'canjo':
     data_dir = "/Users/canjo/data/cliqs/"
 else:
@@ -42,7 +43,7 @@ udt_corpora = {
     "it" : UDTDependencyTreebank(udt2_path_template % "it"),
     "de" : UDTDependencyTreebank(udt2_path_template % "de"),           
     "ja" : UDTDependencyTreebank(udt2_path_template % "ja"), 
-    #"pt-br" : UDTDependencyTreebank(udt2_path_template % "pt-br"),
+    "pt-br" : UDTDependencyTreebank(udt2_path_template % "pt-br"),
     "sv" : UDTDependencyTreebank(udt2_path_template % "sv"),
 }
 
@@ -102,10 +103,3 @@ corpora.update(proiel_torot_corpora) # xcl, orv
 corpora.update(udt_corpora) # ko
 corpora.update(hamledt_corpora) # bn, ca, ru, sk, te, tr
 corpora.update(ud_corpora)
-corpora['ja'] = udt_corpora['ja']
-corpora['zh'] = CoNLLDependencyTreebank("/Users/canjo/data/dependency_treebanks/cmn_dep_tbnk/data/all.conll06")
-
-
-udt_langs = "de sv es fr ko id it ja pt-br".split()
-
-# bads: no; xcl; zh; ru; ko; ro; da; 
