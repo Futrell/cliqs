@@ -14,10 +14,6 @@ except OSError:
     
 if username == 'canjo':
     data_dir = "/Users/canjo/data/cliqs/"
-elif socket.gethostname() == 'tedlab':
-    data_dir = "/var/www/datasets/cliqs/"
-elif socket.gethostname() == 'colala-compute':
-    data_dir = "/home/futrell/data/cliqs/"
 else:
     data_dir = "http://tedlab.mit.edu/datasets/cliqs/"
 
