@@ -1,4 +1,11 @@
 #!/usr/bin/python3
+""" conditioning
+
+This file defines combinators for building functions that take a dependency tree
+and a node and returning some information about the tree at that node.
+
+"""
+
 from collections import namedtuple
 import depgraph
 
