@@ -20,7 +20,7 @@ CH_CONVERSION_ORDER = ['case', 'cop', 'mark']
 def myopen(filename, **kwds):
     if filename.startswith("http"):
         assert not filename.endswith(".gz")
-        open_file = io.StringIO(requests.get(filename).content)
+        return io.StringIO(requests.get(filename).text)
     elif filename.endswith('.gz'):
         open_file = gzip.open(filename, mode='rb', **kwds)
     else:
