@@ -37,6 +37,12 @@ def get_attr(attr):
         return s.node[n].get(attr)
     return get
 
+def attr_of(attr, s):
+    return [s.node[n].get(attr, None) for n in s.nodes()]
+
+words_of = functools.partial(attr_of, 'word')
+lemmas_of = functools.partial(attr_of, 'lemma')
+
 # phrase_of : DiGraph x Int -> [Int]
 def phrase_of(s, word_id):
     words = sorted(nx.descendants(s, word_id))
@@ -130,9 +136,13 @@ def latex_escape(xs):
     return "".join(gen())
 
 def to_latex_document(content):
+    """ Insert content into a LaTeX document template. """
     return LATEX_WIDE_DOCUMENT_TEMPLATE % content
 
 def show_latex(doctext, cleanup=False):
+    """ Show a pdf of a LaTeX document with doctext. 
+    Only really expected to work on OS X.
+    """
     import sh
     with tempfile.NamedTemporaryFile(mode='w+t', encoding='utf-8') as docout:
         print(doctext, file=docout)

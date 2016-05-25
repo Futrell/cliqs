@@ -308,9 +308,10 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
         word_ids = tuple(range(id_lower, id_upper+1))
 
         form = parts[1]
-        info = {'part_of': word_ids,
-                'form': form,
-                }
+        info = {
+            'part_of': word_ids,
+            'form': form,
+        }
         return word_ids, info
 
     def analyze_conllu_misc(self, parts, verbose=False):

@@ -2,7 +2,6 @@ networkx
 nose
 pyrsistent
 requests
-pandas
 nxpd
 ipyparallel
 cloudpickle
