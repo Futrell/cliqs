@@ -14,7 +14,8 @@ import networkx as nx
 from depgraph import heads_of, head_of, dependents_of, gap_degree
 
 VERBOSE = True
-STRICT = False
+STRICT = True
+STRICT_PROJECTIVITY = False
 
 def immutably(f):
     @functools.wraps(f)
@@ -331,7 +332,12 @@ def test_reversible_paths():
     assert None in paths
     assert (5, 6) in paths or (4, 5) in paths
 
-def reverse_content_head(sentence, rel, high_rels, verbose=VERBOSE, strict=STRICT):
+def reverse_content_head(sentence,
+                         rel,
+                         high_rels,
+                         verbose=VERBOSE,
+                         strict=STRICT,
+                         strict_projectivity=STRICT_PROJECTIVITY):
     """ Destructively convert dependencies of the form A -x-> B -y-> C, where y is 
     of type in rels, to A -x-> C -y-> B.
     Thus, complementizers head their sentences and prepositions head their
@@ -350,7 +356,7 @@ def reverse_content_head(sentence, rel, high_rels, verbose=VERBOSE, strict=STRIC
     if gap_degree(sentence) > old_gap_degree:
         if verbose:
             print("Created nonprojectivity in sentence %s" % sentence, file=sys.stderr)
-        if strict:
+        if strict_projectivity:
             if verbose:
                 print("Giving up on sentence %s"  % sentence, file=sys.stderr)
             return None
