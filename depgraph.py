@@ -192,11 +192,13 @@ def test_root_of():
     import nose.tools
     nose.tools.assert_raises(ValueError, root_of, g)
 
+def is_singly_rooted(s):
+    return len(list(roots_of(s))) == 1
+
 Gap = namedtuple('Gap', ['code'])
 
 def is_gap(x):
     return isinstance(x, Gap)
-
 
 # lowest_common_ancestor : DiGraph x Int x Int -> Int
 def lowest_common_ancestor(s, n1, n2):
@@ -478,27 +480,6 @@ def test_gap_degree():
     two = nx.DiGraph([(0, 1), (0, 2), (0, 4), (1, 3), (1, 5)])
     assert gap_degree(two) == 2
 
-def gaps_in_range(xs):
-    """ Given a sorted sequence of integers, return the indices i where
-    xs[i] + 1 != xs[i + 1].
-    """
-    for index, (i, j) in enumerate(zip(xs, xs[1:]), 1):
-        if i + 1 != j:
-            yield index
-
-def test_gaps_in_range():
-    assert set(gaps_in_range([0, 1, 3, 4, 7])) == {2, 4}
-    assert list(gaps_in_range([5, 6, 7, 8, 9])) == []
-    assert list(gaps_in_range([])) == []
-
-def num_gaps_in_range(xs):
-    return len(list(gaps_in_range(xs)))
-
-def test_num_gaps_in_range():
-    assert num_gaps_in_range([0, 1, 3, 4, 7]) == 2
-    assert num_gaps_in_range([5, 6, 7, 8, 9]) == 0
-    assert num_gaps_in_range([]) == 0
-
 def is_well_nested(s):
     """ Check if a sentence is well-nested in the sense of Kuhlmann (2013). """
     raise NotImplementedError
@@ -639,7 +620,6 @@ def insert_multiple(xs, indices, values):
         yield x
     for i_left_over in indices:
         yield next(values_it)
-
 
 def crossings_in(tree):
     for edge in tree.edges():

@@ -13,6 +13,7 @@ import networkx as nx
 import requests
 
 import deptransform
+import depgraph
 
 EMPTY_SET = frozenset({})
 CH_CONVERSION_ORDER = ['case', 'cop', 'mark']
@@ -117,13 +118,15 @@ class DependencyTreebank(object):
                   strict=False,
                   remove_punct=True,
                   fix_content_head=CH_CONVERSION_ORDER,
-                  allow_multihead=False):
+                  allow_multihead=False,
+                  allow_multiple_roots=False):
         """ Yield sentences as DepSentences. """
         def gen():
             with myopen(self.filename) as lines:
                 for sentence in self.generate_sentences(
                         lines,
                         allow_multihead=allow_multihead,
+                        allow_multiple_roots=allow_multiple_roots,
                         verbose=verbose):
                     sentence.ch = self.ch
                     sentence.high = self.high
@@ -244,7 +247,11 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                     sentence.add_word(*word_parts)
         return sentence
     
-    def generate_sentences(self, lines, allow_multihead=False, verbose=False):
+    def generate_sentences(self,
+                           lines,
+                           allow_multihead=False,
+                           allow_multiple_roots=False,
+                           verbose=False):
         """ Segment an iterable of CoNLL lines into sentences and analyze them.
         [CoNLL line] -> [DepSentence]
         """
@@ -253,7 +260,10 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                                                 allow_multihead=allow_multihead,
                                                 verbose=verbose)
             if not sentence.nodes():
-                continue
+                continue # drop empty sentences
+            if not allow_multiple_roots:
+                if not depgraph.is_singly_rooted(sentence):
+                    continue # drop non singly rooted trees
             sentence.start_line = i_start
             sentence.end_line = i_end
             sentence.filename = self.filename
@@ -415,7 +425,11 @@ class PerseusDependencyTreebank(DependencyTreebank):
 
         return word_id, word_attr, head_id, deptype
 
-    def generate_sentences(self, lines, allow_multihead=False, verbose=False):
+    def generate_sentences(self,
+                           lines,
+                           allow_multihead=False,
+                           allow_multiple_roots=False,
+                           verbose=False):
         sentence_so_far = DepSentence(filename=self.filename)
         for line in lines:
             line = line.strip()
@@ -431,12 +445,17 @@ class PerseusDependencyTreebank(DependencyTreebank):
                         sentence_so_far = DepSentence(self.filename)
                 # otherwise do nothing
         if sentence_so_far.nodes():
-            yield sentence_so_far
+            if allow_multiple_roots or depgraph.is_singly_rooted(sentence_so_far):
+                yield sentence_so_far
 
 
 class StanfordDependencyTreebank(DependencyTreebank):
     """ Stanford Dependency Treebank: Not necessarily trees! """
-    def generate_sentences(self, lines, allow_multihead=False, verbose=False):
+    def generate_sentences(self,
+                           lines,
+                           allow_multihead=False,
+                           allow_multiple_roots=False,
+                           verbose=False):
         if allow_multihead:
             raise NotImplementedError
         sentence_so_far = DepSentence(filename=self.filename)
@@ -453,7 +472,8 @@ class StanfordDependencyTreebank(DependencyTreebank):
                 yield sentence_so_far
                 sentence_so_far = DepSentence(filename=self.filename)
         if sentence_so_far.nodes():
-            yield sentence_so_far
+            if allow_multiple_roots or depgraph.is_singly_rooted(sentence_so_far):
+                yield sentence_so_far            
 
     def analyze_word(self, stuff):
         attributes = {}
