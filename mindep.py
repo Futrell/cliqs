@@ -3,6 +3,8 @@ from __future__ import print_function
 import random
 import itertools
 
+import networkx as nx
+
 import depgraph
 
 def flatten(iterable, _isinstance=isinstance):
@@ -39,6 +41,49 @@ def deplen_by_deptype(thing_fn, sentence, linearization=None, fn=sum):
 
 def sum_of_abs(xys):
     return sum(abs(x - y) for x, y in xys)
+
+def embedding_depths(sentence, linearization=None, include_root=False):
+    if linearization is None:
+        li = {w_id : w_id for w_id in sentence.nodes()}
+    else:
+        li = {w_id:i for i, w_id in enumerate(linearization)}
+
+    try:
+        for n in sentence.nodes():
+            if n != 0 or include_root:
+                # How many arcs are there over this node?
+                num_arcs = 0
+                for h, d in sentence.edges():
+                    if h != 0 or include_root:
+                        if (li[h] < li[n] < li[d]) or (li[d] < li[n] < li[h]):
+                            num_arcs += 1
+                yield num_arcs
+    except KeyError:
+        error_str = "Could not get embedding depths for sentence because it "
+        error_str += "contains an edge "
+        error_str += "which is not represented in the linearization: "
+        error_str += str(linearization)
+        error_str += "\nEdges: %s" % sentence.edges()
+        error_str += "\nNodes: %s" % sentence.nodes()
+        raise ValueError(error_str)            
+
+def test_embedding_depths():
+    s = nx.DiGraph([(0, 4), (1, 3), (3, 2), (4, 1), (4, 6), (6, 5)])
+    depths = list(embedding_depths(s))
+    assert depths == [0, 2, 1, 0, 1, 0]
+
+    depths = list(embedding_depths(s, linearization=[0, 5, 6, 1, 2, 3, 4]))
+    assert depths == [1, 3, 2, 0, 0, 0]
+
+    s.add_edge(4, 7)
+    depths = list(embedding_depths(s))
+    assert depths == [0, 2, 1, 0, 2, 1, 0]
+
+def sum_embedding_depth(*args, **kwds):
+    return sum(embedding_depths(*args, **kwds))
+
+def max_embedding_depth(*args, **kwds):
+    return max(embedding_depths(*args, **kwds))
 
 def deplen(sentence, linearization=None, include_root=False, fn=sum_of_abs, filters=None):
     if filters is None:
