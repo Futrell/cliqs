@@ -56,7 +56,6 @@ def mean(xs):
 def compose(*fs):
     return functools.reduce(lambda f, g: lambda x: f(g(x)), fs)
 
-    
 def conditional_counts(pairs):
     """ Given an iterable of pairs (X, Y), produce a dict X -> Y -> Int with the
     conditional counts of values of values of Y conditional on values of X. """
