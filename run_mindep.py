@@ -1,13 +1,14 @@
 from __future__ import division
 import sys
 import copy
+import itertools
 import functools
 import random
 import csv
 
-import dill
 import rfutils
 import pandas as pd
+from distributed import Executor, as_completed
 
 import mindep
 import opt_mindep
@@ -31,7 +32,7 @@ CONDITIONING = opt_mindep.get_deptype
 
 @rfutils.memoize
 def load_linearization_model(lang, spec):
-    return with_open(MODEL_FILENAME_TEMPLATE % (lang, spec), 'rb', dill.load)
+    return with_open(MODEL_FILENAME_TEMPLATE % (lang, spec), 'rb', pickle.load)
 
 LANGS = set(corpora.ud_corpora.keys())
 
@@ -78,7 +79,6 @@ def generate_rows(sentences, lang, deterministic_fns, random_fns, parallel=False
         deptypes = None
         
     if parallel:
-        from ipyutils import pmap
         rows = pmap(gen_row, enumerate(sentences))
     else:
         # for some obscure reason, when this function is run as part of a 
@@ -336,11 +336,17 @@ def name_fn(var):
     else:
         return "".join(c for c in var if not c.isdigit())
 
+    
+executor = Executor()
+
+def pmap(f, xs):
+    for future in as_completed(executor.map(f, xs)):
+        yield future.result()
+
 def main(cmd, *args):
     if cmd == "run":
         langs = args
-        for lang in langs:
-            rows = iter(build_it(lang))
+        rows = rfutils.flat(build_it(lang, parallel=False) for lang in langs)
         first_row = rfutils.first(rows)
         writer = csv.DictWriter(sys.stdout, first_row.keys())
         writer.writeheader()
