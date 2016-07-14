@@ -21,23 +21,28 @@ import bisect
 import os.path
 import operator
 import tempfile
-import itertools
 import functools
 from collections import Counter, namedtuple, defaultdict
 
 import networkx as nx
-from rfutils import sliding, the_only, compose
+from rfutils import sliding, the_only
 
 class EquableDiGraph(nx.DiGraph):
     def __eq__(self, other):
         return self.node == other.node and self.edge == other.edge
 
+# get_attr : String -> (DiGraph x Int -> Maybe String)    
 def get_attr(attr):
+    """ Produce a function which gets the given attribute of a sentence at a 
+    node, returning None if the attribute cannot be found. """
     def get(s, n):
         return s.node[n].get(attr)
     return get
 
+# attr_of : String x DiGraph -> [String]
 def attr_of(attr, s):
+    """ Reduce a sentence to an iterable of attribute values, 
+    one for each non-root node. """
     return [s.node[n].get(attr, None) for n in s.nodes()]
 
 words_of = functools.partial(attr_of, 'word')
@@ -45,6 +50,8 @@ lemmas_of = functools.partial(attr_of, 'lemma')
 
 # phrase_of : DiGraph x Int -> [Int]
 def phrase_of(s, word_id):
+    """ Return a node index and the indices of all its transitive descendents, 
+    in order. """
     words = sorted(nx.descendants(s, word_id))
     bisect.insort(words, word_id)
     return words
@@ -166,6 +173,7 @@ def show_sentences_latex(ss, **kwds):
 
 # roots_of : DiGraph -> Iterator Int     
 def roots_of(s):
+    """ Yield the root nodes of a sentence. """
     for node, in_degree in s.in_degree().items():
         if in_degree == 0:
             yield node
@@ -182,6 +190,9 @@ def test_roots_of():
 
 # root_of : DiGraph -> Int    
 def root_of(s):
+    """ Return the single root node of a sentence; 
+    die if there are 0 roots or more than 1 root. 
+    """
     return the_only(roots_of(s))
 
 def test_root_of():
@@ -209,7 +220,7 @@ def lowest_common_ancestor(s, n1, n2):
 
 def gaps_under(s, word_id):
     """ Return the indices in the immediate phrase for the gaps under a
-    given node. Assumes tree-structured DepSentence. """
+    given node. Assumes tree-structured sentence. """
     immediate_phrase = immediate_phrase_of(s, word_id)
     immediate_phrase_set = set(immediate_phrase)
     blocks = blocks_of(s, word_id)
@@ -269,6 +280,7 @@ def test_gaps_under():
     assert list(gaps_under(rr_t, 2)) == [(1, Gap('hhd'))]
 
 def immediate_phrase_of(s, word_id, with_gaps=False):
+    """ Return the dependents of word_id in s along with word_id. """
     words = dependents_of(s, word_id)
     words.append(word_id)
     words.sort()
@@ -305,10 +317,15 @@ def test_num_words_in_phrase():
 
 # head_of : DiGraph x Int -> Int    
 def head_of(s, word_id):
+    """ Return the single head of word_id in s. 
+    Die if word_id has 0 or more than 1 heads. 
+    """
     return the_only(heads_of(s, word_id))
 
 # get_head_of : DiGraph x Int -> Maybe Int
 def get_head_of(s, word_id, default=None):
+    """ Return the single head of word_id in s, or None if it has no head.
+    Die if word_id has more than one head. """
     heads = heads_of(s, word_id)
     if heads:
         return the_only(heads)
@@ -325,6 +342,7 @@ def test_head_of():
     nose.tools.assert_raises(ValueError, head_of, t, 1)
 
 def deptype_to_head_of(s, word_id):
+    """ Return the dependency type of the arc to word_id from its head in s. """
     h = head_of(s, word_id)
     return s.edge[h][word_id]['deptype']
 
@@ -371,6 +389,7 @@ def is_tree(s):
 
 def block_endpoints_of(s):
     """ Kuhlmann's (2012: 364-5) O(n) algorithm to identify block endpoints """
+    # Comments are from Kuhlmann's paper.
     # We start at a virtual root node which serves as the parent of the real
     # root node. 
     current = None
@@ -457,6 +476,7 @@ def test_blocks_of():
     s = nx.DiGraph([(3, 2), (2, 1), (3, 4), (4, 8), (2, 5), (5, 7), (7, 6)])
     blocks = blocks_of(s)
     assert blocks[2] == [[1, 2], [5, 6, 7]]
+    assert blocks_of(s, 2) == blocks[2]
     
 def block_degree(s):
     """ Block degree of a dependency tree (Kuhlmann, 2013) """
@@ -493,8 +513,8 @@ def _test_is_well_nested():
 
 def is_monotonic(cmp, xs):
     try:
-        return all(itertools.starmap(cmp, sliding(xs, 2)))
-    except StopIteration: # TODO fix sliding so this doesn't need to be a special case
+        return all(cmp(x, y) for x, y in sliding(xs, 2))
+    except StopIteration: # TODO fix sliding so this doesn't need to be special
         return True
 
 def test_is_monotonic():
@@ -539,7 +559,12 @@ def immediate_phrase_has_monotonic_ordering(s, n, left_cmp, right_cmp):
     )
 
 def immediate_phrase_has_outward_ordering(s, n):
-    return immediate_phrase_has_monotonic_ordering(s, n, operator.ge, operator.le)
+    return immediate_phrase_has_monotonic_ordering(
+        s,
+        n,
+        operator.ge,
+        operator.le
+    )
 
 def has_monotonic_ordering(s, left_cmp, right_cmp):
     return all(
@@ -632,7 +657,8 @@ def crossings_in(tree):
                     or (n1_ <= n1 and n2 <= n2_)):
                 yield frozenset({edge, edge_})
 
-num_crossings_in = compose(len, set, crossings_in) # type: Callable[[nx.DiGraph], int]
+def num_crossings_in(tree):
+    return len(set(crossings_in(tree)))
 
 def edge_projective(graph, arc):
     """ determine if the given edge is part of a projective graph.
@@ -671,6 +697,13 @@ def is_projective_on_right(s):
         if any(not gap_on_left for _, _, gap_on_left, _ in gaps):
             return False
     return True
+
+def transitive_head_of(s, n, k):
+    assert k >= 0
+    while k > 0:
+        n = depgraph.head_of(s, n)
+        k -= 1
+    return n
 
 def transitive_heads(s, n):
     while True:
