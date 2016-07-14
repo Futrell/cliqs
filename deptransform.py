@@ -13,7 +13,7 @@ import networkx as nx
 
 from depgraph import heads_of, head_of, dependents_of, gap_degree
 
-VERBOSE = True
+VERBOSE = False
 STRICT = True
 STRICT_PROJECTIVITY = False
 
@@ -345,7 +345,8 @@ def reverse_content_head(sentence,
     Thus, complementizers head their sentences and prepositions head their
     nouns, rather than vice versa.
     """
-    old_gap_degree = gap_degree(sentence)
+    if verbose or strict_projectivity:
+        old_gap_degree = gap_degree(sentence)
     for path in reversible_paths(sentence, rel, verbose=verbose):
         if path is None:
             if strict:
@@ -355,10 +356,10 @@ def reverse_content_head(sentence,
         else:
             h, d = path
             sentence = lift_head(sentence, h, d, high_rels)
-    if gap_degree(sentence) > old_gap_degree:
+    if (verbose or strict_projectivity) and gap_degree(sentence) > old_gap_degree:
         if verbose:
             print("Created nonprojectivity in sentence %s" % sentence, file=sys.stderr)
-        if strict_projectivity:
+        elif strict_projectivity:
             if verbose:
                 print("Giving up on sentence %s"  % sentence, file=sys.stderr)
             return None
