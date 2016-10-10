@@ -356,6 +356,13 @@ def test_deptype_to_head_of():
 dependents_of = nx.DiGraph.successors # might need to replace for genericity
 heads_of = nx.DiGraph.predecessors
 
+Dependents = namedtuple('Dependents', ['left', 'right'])
+
+def left_right_dependents_of(s, word_id):
+    ds = sorted(dependents_of(s, word_id))
+    middle = bisect.bisect(ds, word_id)
+    return Dependents(ds[:middle], ds[middle:])
+
 def left_dependents_of(s, word_id):
     ds = sorted(dependents_of(s, word_id))
     return ds[:bisect.bisect(ds, word_id)] # would linear search be faster?

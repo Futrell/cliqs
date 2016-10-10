@@ -114,6 +114,9 @@ class DependencyTreebank(object):
         self._sentences = list(self.sentences(verbose=True, **kwds))
         self._sentences_in_memory_flags = kwds
 
+    def read(self):
+        return myopen(self.filename)
+
     def sentences(self, verbose=False,
                   strict=False,
                   remove_punct=True,
@@ -122,7 +125,7 @@ class DependencyTreebank(object):
                   allow_multiple_roots=False):
         """ Yield sentences as DepSentences. """
         def gen():
-            with myopen(self.filename) as lines:
+            with self.read() as lines:
                 for sentence in self.generate_sentences(
                         lines,
                         allow_multihead=allow_multihead,
@@ -156,7 +159,7 @@ class DependencyTreebank(object):
 
 
 # This class and the following mostly provide parsers for the various formats.
-    
+
 class CoNLLDependencyTreebank(DependencyTreebank):
     """ A dependency treebank in CoNLL format. """
     word_id_col = 0
@@ -268,6 +271,38 @@ class CoNLLDependencyTreebank(DependencyTreebank):
             sentence.end_line = i_end
             sentence.filename = self.filename
             yield sentence
+
+class DundeeTreebank(CoNLLDependencyTreebank):
+    word_id_col = 3
+    word_col = 0 # dummy
+    lemma_col = 0 # dummy
+    pos_col = 4
+    pos2_col = 4 # dummy
+    infl_col = 0 # dummy
+    head_id_col = 5
+    deptype_col = 6
+
+    def generate_sentences(self, lines, **ignore):
+        prev_sentid = None
+        curr_sentence = None
+        for line in lines:
+            itemno, wnum, sentid, id, cpos, head, deprel = line.split("\t")
+            if sentid != prev_sentid:
+                if curr_sentence is not None: # not first time through
+                    yield curr_sentence 
+                curr_sentence = DepSentence(self.filename)
+            prev_sentid = sentid
+            curr_sentence.add_word(int(id),
+                                   {'pos': cpos},
+                                   int(head),
+                                   deprel)
+        yield curr_sentence
+
+    def read(self):
+        lines = myopen(self.filename)
+        next(lines) # throw away the header line
+        return lines
+            
 
 class UDTDependencyTreebank(CoNLLDependencyTreebank):
     pass

@@ -8,7 +8,7 @@ import csv
 
 import rfutils
 import pandas as pd
-from distributed import Executor, as_completed
+#from distributed import Executor, as_completed
 
 import mindep
 import opt_mindep
@@ -79,6 +79,7 @@ def generate_rows(sentences, lang, deterministic_fns, random_fns, parallel=False
         deptypes = None
         
     if parallel:
+        die
         rows = pmap(gen_row, enumerate(sentences))
     else:
         # for some obscure reason, when this function is run as part of a 
@@ -265,9 +266,9 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
         corpora[lang].sentences(**OPTS),
         lang,
         {
-            #'deplen': deplen_f(identity),
-            'max_depth': max_embedding_depth_f(identity),
-            'sum_depth': sum_embedding_depth_f(identity),
+            'deplen': deplen_f(identity),
+            #'max_depth': max_embedding_depth_f(identity),
+            #'sum_depth': sum_embedding_depth_f(identity),
             #'bcmc': real_best_case_memory_cost,
             #'min_deplen_headfixed': min_deplen_opt(move_head=False),
             #'min_deplen': min_deplen,
@@ -275,9 +276,9 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'mhd': mhd,
         },
         {
-            #'rand_deplen': deplen_f(random_sample_nobias),
-            'rand_max_depth': max_embedding_depth_f(random_sample_nobias),
-            'rand_sum_depth': sum_embedding_depth_f(random_sample_nobias),
+            'rand_deplen': deplen_f(random_sample_nobias),
+            #'rand_max_depth': max_embedding_depth_f(random_sample_nobias),
+            #'rand_sum_depth': sum_embedding_depth_f(random_sample_nobias),
             
             #'rand_proj_lin_r_lic': deplen_f(random_sample_proj_lin_spec('r|lic')),
             #'rand_proj_lin_dr_lic': deplen_f(random_sample_proj_lin_spec('dr|lic')),
@@ -337,7 +338,7 @@ def name_fn(var):
         return "".join(c for c in var if not c.isdigit())
 
     
-executor = Executor()
+#executor = Executor()
 
 def pmap(f, xs):
     for future in as_completed(executor.map(f, xs)):
