@@ -1,0 +1,4 @@
+networkx
+requests
+nose
+pyrsistent
