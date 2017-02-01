@@ -1,8 +1,0 @@
-networkx
-nose
-pyrsistent
-requests
-nxpd
-ipyparallel
-cloudpickle
-sh

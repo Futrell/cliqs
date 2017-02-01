@@ -6,20 +6,10 @@ It is written for Python 3.5, and seems to work in Python 2.7 also, but I can't 
 
 ### Dependencies
 
-These Python packages are needed for basic functionality.
+`pip install -r requirements.txt` for basic functionality.
+Additionally, `pip install -r optrequirements.txt` for optional dependencies used for parallelization and visualization.
 
-1. `networkx`
-2. `nose`
-3. `pyrsistent`
-4. `requests`
+## Building
 
-#### Optional dependencies:
-
-These python packages enable some functions for parallelization and visualization.
-
-1. `pandas`
-2. `nxpd`
-3. `ipyparallel`
-4. `cloudpickle`
-5. `sh`
-
+`python run_mindep.py run lang1 lang2 ... langn` for an initial run.
+The list of langs can be found at `corpora.ud_langs`.
