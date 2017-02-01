@@ -2,3 +2,4 @@ networkx
 requests
 nose
 pyrsistent
+-e git://github.com/Futrell/rfutils.git#egg=rfutils
