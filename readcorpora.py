@@ -12,8 +12,8 @@ import pyrsistent as pyr
 import networkx as nx
 import requests
 
-import deptransform
-import depgraph
+from . import deptransform
+from . import depgraph
 
 EMPTY_SET = frozenset({})
 CH_CONVERSION_ORDER = ['case', 'cop', 'mark']
