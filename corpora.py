@@ -5,7 +5,7 @@ import socket
 
 import networkx as nx
 
-from readcorpora import *
+from .readcorpora import *
 
 try:
     username = os.getlogin()
@@ -24,10 +24,10 @@ hamledt_stanford_path_template = data_dir + "hamledt2/%s/stanford/conll/all.conl
 hamledt2_stanford_path_template = data_dir + "2.0/%s/stanford/all.conll"
 hamledt2plus_stanford_path_template = data_dir + "hamledt2plus/%s/stanford/all.conll"
 hamledt3_stanford_path_template = data_dir + "hamledt3/%s/all.conllu"
-ud_path_template = data_dir + "ud-treebanks-v1.3/%s/all.conllu"
-ud_train_template = data_dir + "ud-treebanks-v1.3/%s/%s-ud-train.conllu"
-ud_dev_template = data_dir + "ud-treebanks-v1.3/%s/%s-ud-dev.conllu"
-ud_test_template = data_dir + "ud-treebanks-v1.3/%s/%s-ud-test.conllu"
+ud_path_template = data_dir + "ud-treebanks-v1.4/%s/all.conllu"
+ud_train_template = data_dir + "ud-treebanks-v1.4/%s/%s-ud-train.conllu"
+ud_dev_template = data_dir + "ud-treebanks-v1.4/%s/%s-ud-dev.conllu"
+ud_test_template = data_dir + "ud-treebanks-v1.4/%s/%s-ud-test.conllu"
 proiel_torot_template = data_dir + "proiel/%s/all.conll"
 proiel_template = data_dir + "proiel/proiel-treebank-20150725/%s.conll"
 torot_template = data_dir + "proiel/torot/%s.conll"    
@@ -47,7 +47,7 @@ udt_corpora = {
     "sv" : UDTDependencyTreebank(udt2_path_template % "sv"),
 }
 
-ud_langs = "grc ar eu bg ca zh hr cs da nl en et fi fr gl de got grc he hi hu id ga it ja kk la lv no cu fa pl pt ro ru sl es sv ta tr el".split()
+ud_langs = "grc ar eu bg ca zh hr cs da nl en et fi fr gl de got grc he hi hu id ga it ja kk la lv no cu fa pl pt ro ru sl es sv ta tr el swl uk ug vi sk sa cop".split()
 
 ud_corpora = {
     lang : UniversalDependency1Treebank(ud_path_template % lang)
