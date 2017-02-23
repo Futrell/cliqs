@@ -9,7 +9,7 @@ import networkx as nx
 from rfutils import mreduce_by_key
 
 import conditioning as cond
-import mindep
+from . import mindep
 
 WEIGHT_MIN = -1
 WEIGHT_MAX = 1
