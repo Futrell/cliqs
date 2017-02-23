@@ -20,16 +20,14 @@ STRICT_PROJECTIVITY = False
 def immutably(f):
     @functools.wraps(f)
     def wrapped(sentence, *a, **k):
-        sentence = copy.deepcopy(sentence)
-        return f(sentence, *a, **k)
+        sentence_ = copy.deepcopy(sentence)
+        return f(sentence_, *a, **k)
     return wrapped
 
 PUNCTUATION_POS = set(". punc punct PUNC PUNCT wp".split())
 PUNCTUATION_RELS = set("punct p WP".split())
 def remove_punct_from_sentence(sentence, verbose=VERBOSE): 
     """ Destructively remove punctuation from the given sentence. """
-    import copy
-    olds = copy.deepcopy(sentence)
     edges_to_die = [
         (h,d,t) for h,d,t in sentence.edges_iter(data='deptype')
         if t in PUNCTUATION_RELS
@@ -114,7 +112,7 @@ def test_remove_punct_from_sentence():
     s.node[7]['pos'] = 'HELLO'
     s.whatever = 'test'
 
-    s2 = remove_punct_from_sentence(s)
+    s2 = immutably(remove_punct_from_sentence)(s)
     assert set(s2.edges(data='deptype')) == {
         (0, 2, 'root'),
         (2, 1, 'nsubj'),
