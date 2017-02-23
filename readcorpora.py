@@ -3,10 +3,7 @@ from __future__ import print_function
 import io
 import re
 import gzip
-import copy
 import codecs
-import functools
-from collections import namedtuple
 
 import pyrsistent as pyr
 import networkx as nx
@@ -18,6 +15,7 @@ from . import depgraph
 EMPTY_SET = frozenset({})
 CH_CONVERSION_ORDER = ['case', 'cop', 'mark']
 
+
 def myopen(filename, **kwds):
     if filename.startswith("http"):
         assert not filename.endswith(".gz")
@@ -27,6 +25,7 @@ def myopen(filename, **kwds):
     else:
         open_file = open(filename, mode='rb', **kwds)
     return codecs.getreader('utf-8')(open_file)
+
 
 class DepSentence(nx.DiGraph):
     """ Dependency Sentence
@@ -62,13 +61,15 @@ class DepSentence(nx.DiGraph):
         self.node[word_id]['id'] = word_id
         self.add_edge(head_id, word_id, deptype=rel_attr)
 
-# from_content_head : graph x [string] -> Maybe graph        
+
+# from_content_head : graph x [string] -> Maybe graph
 def from_content_head(ds, rels, verbose=False, strict=False):
     for rel in rels:
         ds = from_content_head_rel(ds, rel, verbose=verbose, strict=strict)
-        if ds is None: 
+        if ds is None:
             return ds
     return ds
+
 
 # from_content_head_rel : graph x string -> Maybe graph
 def from_content_head_rel(ds, rel, verbose=False, strict=False):
@@ -89,11 +90,12 @@ def from_content_head_rel(ds, rel, verbose=False, strict=False):
             new_ds.high = ds.high.set(rel, EMPTY_SET)
             return new_ds
 
+
 class DependencyTreebank(object):
     """ Interface to Dependency Treebanks. """
     ch = pyr.m()
     high = pyr.m()
-    
+
     def __init__(self, filename, load_into_memory=False, ch={}, high={}):
         self.filename = filename
         self._sentences = []
@@ -183,13 +185,13 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                 word_id = int(float(parts[self.word_id_col])) 
         
             word_attr = {
-                'word' : parts[self.word_col],
-                'lemma' : parts[self.lemma_col].split("+")[0],
-                'pos' : parts[self.pos_col],
-                'pos2' : parts[self.pos2_col],
-                'infl' : parts[self.infl_col],
+                'word': parts[self.word_col],
+                'lemma': parts[self.lemma_col].split("+")[0],
+                'pos': parts[self.pos_col],
+                'pos2': parts[self.pos2_col],
+                'infl': parts[self.infl_col],
             }
-        
+
             try:
                 head_id = int(parts[self.head_id_col])
             except ValueError:
@@ -208,10 +210,11 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                         word_attr['pos'] = 'DET'
                     elif 'pos' in infls:
                         word_attr['pos'] = infls['pos'].upper()
-            
+
             return word_id, word_attr, head_id, deptype
         except Exception as e:
             if verbose:
+                import sys
                 print(
                     "Parsing error in file: %s %s" % (self.filename, e),
                     file=sys.stderr
@@ -249,7 +252,7 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                 if word_parts:
                     sentence.add_word(*word_parts)
         return sentence
-    
+
     def generate_sentences(self,
                            lines,
                            allow_multihead=False,
@@ -263,22 +266,23 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                                                 allow_multihead=allow_multihead,
                                                 verbose=verbose)
             if not sentence.nodes():
-                continue # drop empty sentences
+                continue  # drop empty sentences
             if not allow_multiple_roots:
                 if not depgraph.is_singly_rooted(sentence):
-                    continue # drop non singly rooted trees
+                    continue  # drop non singly rooted trees
             sentence.start_line = i_start
             sentence.end_line = i_end
             sentence.filename = self.filename
             yield sentence
 
+
 class DundeeTreebank(CoNLLDependencyTreebank):
     word_id_col = 3
-    word_col = 0 # dummy
-    lemma_col = 0 # dummy
+    word_col = 0  # dummy
+    lemma_col = 0  # dummy
     pos_col = 4
-    pos2_col = 4 # dummy
-    infl_col = 0 # dummy
+    pos2_col = 4  # dummy
+    infl_col = 0  # dummy
     head_id_col = 5
     deptype_col = 6
 
@@ -288,8 +292,8 @@ class DundeeTreebank(CoNLLDependencyTreebank):
         for line in lines:
             itemno, wnum, sentid, id, cpos, head, deprel = line.split("\t")
             if sentid != prev_sentid:
-                if curr_sentence is not None: # not first time through
-                    yield curr_sentence 
+                if curr_sentence is not None:  # not first time through
+                    yield curr_sentence
                 curr_sentence = DepSentence(self.filename)
             prev_sentid = sentid
             curr_sentence.add_word(int(id),
@@ -300,24 +304,26 @@ class DundeeTreebank(CoNLLDependencyTreebank):
 
     def read(self):
         lines = myopen(self.filename)
-        next(lines) # throw away the header line
+        next(lines)  # throw away the header line
         return lines
-            
+
 
 class UDTDependencyTreebank(CoNLLDependencyTreebank):
     pass
 
+
 # based on but NOT IDENTICAL TO https://universaldependencies.github.io/docs/u/dep/index.html
 # I've customized the categories to my own purposes here.
-UD_CLAUSAL_CORE_RELS = set("nsubj nsubjpass csubj csubjpass dobj iobj ccomp xcomp".split())
-UD_CLAUSAL_NONCORE_RELS = set("nmod advcl advmod neg expl".split())
-UD_NOUN_RELS = set("nummod appos nmod acl amod det neg".split())
-UD_MARKING_RELS = set("case mark".split())
-UD_COMPOUNDING_RELS = set("compound name mwe foreign goeswith".split())
-UD_JOINING_RELS = set("list dislocated parataxis remnant reparandum".split())
-UD_WEIRD_VERB_RELS = set("aux auxpass cop".split())
-UD_DISCOURSE_RELS = set("vocative discourse".split())
-UD_COORDINATION_RELS = set("conj cc".split())
+UD_CLAUSAL_CORE_RELS = set("nsubj nsubjpass csubj csubjpass dobj iobj ccomp xcomp".split())  # {UD clausal core}
+UD_CLAUSAL_NONCORE_RELS = set("nmod advcl advmod neg expl".split())  # {UD clausal noncore} + {"expl"}
+UD_NOUN_RELS = set("nummod appos nmod acl amod det neg".split())  # {UD noun}
+UD_MARKING_RELS = set("case mark".split())  # {UD case-mark-preposition-possessive} + {UD other} - {"punct"}
+UD_COMPOUNDING_RELS = set("compound name mwe foreign goeswith".split())  # {UD compounding and unanalyzed}
+UD_JOINING_RELS = set("list dislocated parataxis remnant reparandum".split())  # {UD loose joining}
+UD_WEIRD_VERB_RELS = set("aux auxpass cop".split())  # {UD Auxiliary}
+UD_DISCOURSE_RELS = set("vocative discourse".split())  # {UD nominal} - {"expl"}
+UD_COORDINATION_RELS = set("conj cc".split())  # {UD Coordination} - {"punct"}
+
 
 class UniversalDependency1Treebank(CoNLLDependencyTreebank):
     ch = pyr.pmap({
@@ -335,22 +341,21 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
             | {'mark'}
         ),
         'cop': (
-            UD_CLAUSAL_CORE_RELS - {'dobj'} # copulas never have dobj???
+            UD_CLAUSAL_CORE_RELS - {'dobj'}  # copulas never have dobj???
             | UD_CLAUSAL_NONCORE_RELS
             | UD_JOINING_RELS
             | UD_WEIRD_VERB_RELS
             | UD_DISCOURSE_RELS
-            | UD_COORDINATION_RELS # "but" always attaches high, "and" often attaches low...
+            | UD_COORDINATION_RELS  # "but" always attaches high, "and" often attaches low...
             | {'mark', 'nmod/tmod'}
         ),
         'mark': EMPTY_SET,
         'aux': EMPTY_SET,
     })
-    
 
     def analyze_compound_line(self, parts, verbose=False):
         id_lower, id_upper = map(int, parts[0].split("-"))
-        word_ids = tuple(range(id_lower, id_upper+1))
+        word_ids = tuple(range(id_lower, id_upper + 1))
 
         form = parts[1]
         info = {
@@ -438,23 +443,23 @@ class PerseusDependencyTreebank(DependencyTreebank):
     def analyze_line(self, line, verbose=False):
         line = line.strip()
         word_id = int(self.id_re.findall(line)[0])
-        
+
         word_attr = {}
         try:
             word_attr['word'] = self.form_re.findall(line)[0]
         except IndexError:
             print("No word found in: %s" % line)
-        
+
         try:
             word_attr['lemma'] = self.lemma_re.findall(line)[0]
         except IndexError:
             print("No lemma found in: %s" % line)
-        
+
         try:
-             word_attr['pos'] = self.pos_re.findall(line)[0]
+            word_attr['pos'] = self.pos_re.findall(line)[0]
         except IndexError:
             print("No pos tag found in: %s" % line)
-        
+
         head_id = int(self.head_id_re.findall(line)[0])
         deptype = self.deptype_re.findall(line)[0]
 
@@ -499,8 +504,8 @@ class StanfordDependencyTreebank(DependencyTreebank):
             if line:
                 relation, words = line.split("(", 1)
                 part1, part2 = words.split(", ")
-                head_id, head_attr = self.analyze_word(part1) # kill leading (
-                dep_id, dep_attr = self.analyze_word(part2[:-1]) # trailing )
+                head_id, head_attr = self.analyze_word(part1)  # kill leading (
+                dep_id, dep_attr = self.analyze_word(part2[:-1])  # trailing )
                 sentence_so_far.add_node(head_id, head_attr)
                 sentence_so_far.add_word(dep_id, dep_attr, head_id, relation)
             else:
@@ -508,7 +513,7 @@ class StanfordDependencyTreebank(DependencyTreebank):
                 sentence_so_far = DepSentence(filename=self.filename)
         if sentence_so_far.nodes():
             if allow_multiple_roots or depgraph.is_singly_rooted(sentence_so_far):
-                yield sentence_so_far            
+                yield sentence_so_far
 
     def analyze_word(self, stuff):
         attributes = {}
@@ -518,8 +523,8 @@ class StanfordDependencyTreebank(DependencyTreebank):
             word_id = word_id.replace("'", "")
         return int(word_id), attributes
 
-# And here's the parser for the Parsed Gigaword corpus.
 
+# And here's the parser for the Parsed Gigaword corpus.
 class ParsedGigawordDependencyTreebank(StanfordDependencyTreebank):
     """ parsed gigaword dependency treebank
 
@@ -536,9 +541,8 @@ class ParsedGigawordDependencyTreebank(StanfordDependencyTreebank):
             attributes["word"], stuff = stuff.split("|", 1)
             attributes["lemma"], stuff = stuff.split("^", 1)
             attributes["pos"] = stuff
-        except ValueError: # it'll fail for ROOT-0
+        except ValueError:  # it'll fail for ROOT-0
             pass
-        if "'" in word_id: # happens when the graph is weird
-            word_id = word_id.replace("'", "") 
+        if "'" in word_id:  # happens when the graph is weird
+            word_id = word_id.replace("'", "")
         return int(word_id), attributes
-
