@@ -776,7 +776,7 @@ def is_projective_on_right(s):
 def transitive_head_of(s, n, k):
     assert k >= 0
     while k > 0:
-        n = depgraph.head_of(s, n)
+        n = head_of(s, n)
         k -= 1
     return n
 
@@ -784,7 +784,7 @@ def transitive_head_of(s, n, k):
 def transitive_heads(s, n):
     while True:
         yield n
-        n = depgraph.head_of(s, n)
+        n = head_of(s, n)
         if n == 0:
             break
 
