@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from __future__ import print_function
-import io
+import os
 import re
 import gzip
 import codecs
@@ -14,12 +14,32 @@ from . import depgraph
 
 EMPTY_SET = frozenset({})
 CH_CONVERSION_ORDER = ['case', 'cop', 'mark']
+script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
+DATA_DIR = script_dir + "data/cliqs"
+
+
+def mkdir_p(d):
+    """"mkdir -p"""
+    if not os.path.isdir(d):
+        os.makedirs(d)
+
+
+mkdir_p(DATA_DIR)
 
 
 def myopen(filename, **kwds):
     if filename.startswith("http"):
         assert not filename.endswith(".gz")
-        return io.StringIO(requests.get(filename).text)
+        local_path = filename.replace("http://tedlab.mit.edu/datasets/cliqs", DATA_DIR) + '.gz'
+        if not os.path.isfile(local_path):
+            # cache dataset
+            mkdir_p(os.path.dirname(local_path))
+            res = requests.get(filename, stream=True)
+            with gzip.open(local_path, 'wb') as f:
+                for data in res.iter_content():
+                    f.write(data)
+                print("%s is cached" % filename)
+        open_file = gzip.open(local_path, mode='rb', **kwds)
     elif filename.endswith('.gz'):
         open_file = gzip.open(filename, mode='rb', **kwds)
     else:
