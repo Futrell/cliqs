@@ -311,6 +311,7 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
     
 
 def postprocess(df):
+    import pandas as pd
     dfm = pd.melt(df, id_vars='lang length start_line'.split())
     dfm['real'] = dfm['variable'].map(name_fn)
     del dfm['variable']
