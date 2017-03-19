@@ -11,5 +11,9 @@ Additionally, `pip install -r optrequirements.txt` for optional dependencies use
 
 ## Building
 
-`python run_mindep.py run lang1 lang2 ... langn` for an initial run.
+```
+python run_mindep.py run lang1 lang2 ... langn > out.csv
+python run_mindep.py postprocess out.csv > processed.csv
+```
+
 The list of langs can be found at `corpora.ud_langs`.

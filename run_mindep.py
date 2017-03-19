@@ -1,7 +1,6 @@
 from __future__ import division
 import sys
 import copy
-import itertools
 import functools
 import random
 import csv
@@ -10,8 +9,8 @@ import rfutils
 import pandas as pd
 #from distributed import Executor, as_completed
 
-import mindep
-import opt_mindep
+from mindep import mindep
+from mindep import opt_mindep
 #import linearize as lin
 import corpora
 
@@ -32,6 +31,7 @@ CONDITIONING = opt_mindep.get_deptype
 
 @rfutils.memoize
 def load_linearization_model(lang, spec):
+    import pickle
     return with_open(MODEL_FILENAME_TEMPLATE % (lang, spec), 'rb', pickle.load)
 
 LANGS = set(corpora.ud_corpora.keys())
