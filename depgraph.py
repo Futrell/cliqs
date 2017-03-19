@@ -17,6 +17,15 @@ Amenable to nx.descendants and nx.has_path
 
 """
 from __future__ import print_function, division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import dict
+from builtins import next
+from builtins import zip
+from builtins import range
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
 import bisect
 import os.path
 import operator

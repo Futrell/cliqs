@@ -5,6 +5,13 @@ This file defines combinators for building functions that take a dependency tree
 and a node and returning some information about the tree at that node.
 
 """
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import map
+from future import standard_library
+standard_library.install_aliases()
 
 from collections import namedtuple
 import depgraph
