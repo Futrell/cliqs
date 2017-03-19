@@ -8,16 +8,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-from builtins import str
-from future import standard_library
-standard_library.install_aliases()
+from .compat import *
+
 import sys
 import copy
 import functools
 
 import networkx as nx
 
-from depgraph import heads_of, head_of, dependents_of, gap_degree
+from .depgraph import heads_of, head_of, dependents_of, gap_degree
 
 VERBOSE = False
 STRICT = True

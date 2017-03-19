@@ -1,20 +1,15 @@
 #!/usr/bin/python3
-from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-from builtins import next
-from builtins import str
-from builtins import zip
-from builtins import range
-from future import standard_library
-standard_library.install_aliases()
+from .compat import *
+
 import random
 import itertools
 
 import networkx as nx
 
-import depgraph
+from . import depgraph
 
 def flatten(iterable, _isinstance=isinstance):
     lst = []

@@ -1,12 +1,9 @@
-from __future__ import division, print_function
+from __future__ import print_function
+from __future__ import division
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from builtins import int
-from builtins import range
-from builtins import zip
-from builtins import map
-from future import standard_library
-standard_library.install_aliases()
+from .compat import *
+
 from collections import defaultdict, Counter
 import sys
 import random
@@ -16,8 +13,8 @@ import itertools
 import networkx as nx
 from rfutils import mreduce_by_key
 
-import conditioning as cond
-import mindep
+from . import conditioning as cond
+from . import mindep
 
 WEIGHT_MIN = -1
 WEIGHT_MAX = 1

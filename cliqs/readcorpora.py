@@ -3,17 +3,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-from builtins import next
-from builtins import super
-from builtins import open
-from builtins import range
-from builtins import map
-from builtins import str
-from builtins import filter
-from builtins import int
-from builtins import dict
-from future import standard_library
-standard_library.install_aliases()
+from .compat import *
+
 import os
 import re
 import gzip

@@ -6,15 +6,12 @@ and a node and returning some information about the tree at that node.
 
 """
 from __future__ import unicode_literals
-from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import map
-from future import standard_library
-standard_library.install_aliases()
+from .compat import *
 
 from collections import namedtuple
-import depgraph
+from . import depgraph
 
 def Head(value):
     return ('Head', value)
@@ -36,8 +33,8 @@ def f_name(f):
 def phrase_f(f):
     result = lambda sentence, phrase, h: [f(sentence, n, h) for n in phrase]
     name = "PHRASE_XX_%s_XX" % f_name(f)
-    result.__name__ = name
-    result.__qualname__ = name
+    result.__name__ = str(name)
+    result.__qualname__ = str(name)
     return result
 
 def dependent_f(h_f, d_f, both_f):
@@ -45,16 +42,16 @@ def dependent_f(h_f, d_f, both_f):
         h = depgraph.head_of(sentence, d)
         return (h_f(sentence, h), d_f(sentence, d), both_f(sentence, h, d))
     name = "dependent_f(%s)" % ",".join(map(f_name, [h_f, d_f, both_f]))
-    result.__name__ = name
-    result.__qualname__ = name
+    result.__name__ = str(name)
+    result.__qualname__ = str(name)
     return result
 
 def edge_f(h_f, d_f, both_f):
     def result(sentence, h, d):
         return (h_f(sentence, h), d_f(sentence, d), both_f(sentence, h, d))
     name = "edge_f(%s)" % ",".join(map(f_name, [h_f, d_f, both_f]))
-    result.__name__ = name
-    result.__qualname__ = name
+    result.__name__ = str(name)
+    result.__qualname__ = str(name)
     return result    
 
 def get_edge_dt(sentence, h, d):
@@ -67,8 +64,8 @@ def nothing(*args):
 def product_f(*fs):
     result = lambda *args: tuple(f(*args) for f in fs)
     name = "PRODUCT_XX_%s_XX" % "_".join(f_name(f) for f in fs)
-    result.__name__ = name
-    result.__qualname__ = name
+    result.__name__ = str(name)
+    result.__qualname__ = str(name)
     return result
 
 def head_dep_f(head_f, dep_f):
@@ -78,8 +75,8 @@ def head_dep_f(head_f, dep_f):
         else:
             return Dependent(dep_f(sentence, n))
     name = "HEAD_DEP_XX_%s_%s_XX" % (f_name(head_f), f_name(dep_f))
-    f.__name__ = name
-    f.__qualname__ = name
+    f.__name__ = str(name)
+    f.__qualname__ = str(name)
     return f
 
 def get_dt(sentence, n):

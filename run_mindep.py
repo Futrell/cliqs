@@ -6,8 +6,8 @@ from builtins import open
 from builtins import dict
 from builtins import map
 from builtins import range
-from future import standard_library
-standard_library.install_aliases()
+#from future import standard_library
+#standard_library.install_aliases()
 import sys
 import copy
 import itertools
@@ -19,10 +19,10 @@ import rfutils
 import pandas as pd
 #from distributed import Executor, as_completed
 
-import mindep
-import opt_mindep
+import cliqs.mindep as mindep
+import cliqs.opt_mindep as opt_mindep
 #import linearize as lin
-import corpora
+import cliqs.corpora as corpora
 
 OPTS = {}
 
@@ -280,7 +280,7 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'sum_depth': sum_embedding_depth_f(identity),
             #'bcmc': real_best_case_memory_cost,
             #'min_deplen_headfixed': min_deplen_opt(move_head=False),
-            #'min_deplen': min_deplen,
+            'min_deplen': min_deplen,
             #'min_deplen_headfinal': ordered_deplen,
             #'mhd': mhd,
         },
