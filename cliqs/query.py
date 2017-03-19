@@ -2,16 +2,14 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from builtins import map
-from builtins import zip
-from future import standard_library
-standard_library.install_aliases()
+from .compat import *
+
 import operator
 import itertools
 
 import networkx as nx
 
-import depgraph
+from . import depgraph
 
 _SENTINEL = object()
 
