@@ -1,8 +1,10 @@
 # Crosslinguistic Investigations in Quantitative Syntax (CLIQS)
 
+[![Build Status](https://travis-ci.org/Futrell/cliqs.svg?branch=master)](https://travis-ci.org/Futrell/cliqs)
+
 This is code for studying quantitative syntax using dependency corpora.
 
-It is written for Python 3.5, and seems to work in Python 2.7 also, but I can't guarantee it.
+It is written for Python 3.5, and has been tested to work in Python 2.7.
 
 ### Dependencies
 
