@@ -14,10 +14,11 @@ Additionally, `pip install -r optrequirements.txt` for optional dependencies use
 ### Example
 
 The list of langs can be found at `corpora.ud_langs`.
+
 To compare dependency length in some languages to random and minimal baselines, run:
 `python run_mindep.py run lang1 lang2 ... langn > result_raw.csv`.
 
 Then postprocess the resulting csv:
 `python run_mindep.py postprocess result_raw.csv > result.csv`.
 
-
+Then you can run the various R scripts starting in `mindep_` to analyze the results and generate figures.
