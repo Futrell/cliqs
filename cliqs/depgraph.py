@@ -51,7 +51,7 @@ def get_attr(attr):
 def attr_of(attr, s):
     """ Reduce a sentence to an iterable of attribute values,
     one for each non-root node. """
-    return [s.node[n].get(attr, None) for n in s.nodes()]
+    return [s.node[n].get(attr, None) for n in sorted(s.nodes())]
 
 
 words_of = functools.partial(attr_of, 'word')
