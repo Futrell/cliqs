@@ -10,16 +10,17 @@ import itertools
 import functools
 import random
 import csv
+import pickle
 
 import rfutils
 #from distributed import Executor, as_completed
 
 import cliqs.mindep as mindep
 import cliqs.opt_mindep as opt_mindep
-#import linearize as lin
+import cliqs.linearize as lin
 import cliqs.corpora as corpora
 
-OPTS = {}
+OPTS = {'fix_content_head': False}
 
 def load_all_corpora_into_memory(corpora):
     for corpus in corpora:
@@ -233,8 +234,7 @@ def random_sample_fullyfree(s, *_):
 # Model-based functions
 
 def random_sample_proj_lin_spec(spec):
-    import linearize as lin
-    def random_sample_proj_lin(s, lang):
+    def random_sample_proj_lin(s, lang, *_):
         m = load_linearization_model(lang, spec)
         return lin.proj_lin(m, s)
     return random_sample_proj_lin
@@ -274,9 +274,9 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'max_depth': max_embedding_depth_f(identity),
             #'sum_depth': sum_embedding_depth_f(identity),
             #'bcmc': real_best_case_memory_cost,
-            'min_deplen_headfixed': min_deplen_opt(move_head=False),
-            'min_deplen': min_deplen,
-            'min_deplen_headfinal': ordered_deplen,
+            #'min_deplen_headfixed': min_deplen_opt(move_head=False),
+            #'min_deplen': min_deplen,
+            #'min_deplen_headfinal': ordered_deplen,
             #'mhd': mhd,
         },
         {
@@ -292,18 +292,18 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'rand_proj_lin_dr_mle': deplen_f(random_sample_proj_lin_spec('dr|moo')),
             #'rand_proj_lin_hdr_mle': deplen_f(random_sample_proj_lin_spec('hdr|moo')),
             
-            #'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
+            'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
             #'rand_proj_lin_acceptable': deplen_f(random_sample_proj_lin_spec('hdr|n123')),
             #'rand_proj_lin_meaningsame': deplen_f(random_sample_proj_lin_spec('hdr|n3')),
             
             #'rand_bcmc': random_sample_best_case_memory_cost,
-            'rand_deplen_fixed': random_sample_weighted,
+            #'rand_deplen_fixed': random_sample_weighted,
             #'rand_deplen_fixed_per_lang': random_sample_weighted_per_lang,
             #'rand_weight_bcmc': random_sample_weighted_best_case_memory_cost,
-            'rand_deplen_headfinal': random_sample_headfinal,
-            'rand_deplen_headfinal_fixed': random_sample_weighted_headfinal,
+            #'rand_deplen_headfinal': random_sample_headfinal,
+            #'rand_deplen_headfinal_fixed': random_sample_weighted_headfinal,
             #'rand_known_order': random_sample_known_order,
-            'rand_deplen_headfixed': random_sample_opt(move_head=False),
+            #'rand_deplen_headfixed': random_sample_opt(move_head=False),
             #'rand_deplen_fullyfree': random_sample_fullyfree,
         },
         parallel=parallel,
