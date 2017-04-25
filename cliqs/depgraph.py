@@ -191,6 +191,24 @@ def show_sentences_latex(ss, **kwds):
     text = "\n".join(sentence_to_latex(s, **kwds) for s in ss)
     show_latex(to_latex_document(text))
 
+def sentence_to_conllu(s):
+    def gen():
+        for n in sorted(s.nodes()):
+            if n != 0:
+                nodedict = s.node[n]
+                head = head_of(s, n)
+                yield (
+                    str(n),
+                    nodedict['word'],
+                    nodedict['pos'],
+                    nodedict['pos2'],
+                    nodedict['infl'],
+                    str(head),
+                    s.edge[head][n]['deptype'],
+                    "_", # TODO
+                    "_", # TODO
+                )
+    return map("\t".join, gen())
 
 # roots_of : DiGraph -> Iterator Int     
 def roots_of(s):
