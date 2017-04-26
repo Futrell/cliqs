@@ -292,7 +292,7 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'rand_proj_lin_dr_mle': deplen_f(random_sample_proj_lin_spec('dr|moo')),
             #'rand_proj_lin_hdr_mle': deplen_f(random_sample_proj_lin_spec('hdr|moo')),
             
-            'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
+            #'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
             #'rand_proj_lin_acceptable': deplen_f(random_sample_proj_lin_spec('hdr|n123')),
             #'rand_proj_lin_meaningsame': deplen_f(random_sample_proj_lin_spec('hdr|n3')),
             
@@ -351,7 +351,9 @@ def pmap(f, xs):
 
 def main(cmd, *args):
     if cmd == "run":
-        langs = args
+        langs = tuple(args)
+        if langs == ('ud',):
+            langs = corpora.ud_langs
         rows = rfutils.flat(build_it(lang, parallel=False) for lang in langs)
         first_row = rfutils.first(rows)
         writer = csv.DictWriter(sys.stdout, first_row.keys())
