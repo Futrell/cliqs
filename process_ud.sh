@@ -1,10 +1,10 @@
 # Make concatenated files; make shortcodes with iso codes
 
 for lang in `ls . | grep UD`; do
-    pushd $lang;
-        cat *-ud-*.conllu > all.conllu;
-        code=`ls | grep "ud-dev.conllu" | sed "s/-.*//g"`
-        popd;
+    cd $lang;
+    cat *-ud-*.conllu > all.conllu;
+    code=`ls | grep "ud-dev.conllu" | sed "s/-.*//g"`;
+    cd ..;
     ln -s $lang $code;
 done
 
