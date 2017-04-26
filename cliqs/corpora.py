@@ -52,7 +52,7 @@ udt_corpora = {
     "sv" : UDTDependencyTreebank(udt2_path_template % "sv"),
 }
 
-ud_langs = "ar be bg ca cop cs cu da de el en es et eu fa fi fr ga gl got grc he hi hr hu id it ja kk ko la lt lv nl no_bokmal pl pt ro ru sa sk sl sv ta tr ug uk ur vi zh".split()
+ud_langs = "ar be bg ca cop cs cu da de el en es et eu fa fi fr ga gl got grc he hi hr hu id it ja kk ko la lt lv nl no_bokmaal pl pt ro ru sa sk sl sv ta tr ug uk ur vi zh".split()
 
 ud_corpora = {
     lang : UniversalDependency1Treebank(ud_path_template % lang)
