@@ -56,6 +56,7 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
         # word1 -a-> punct -b-> word2
         # We want to remove punct and the relation -a->, and connect word1 to word2 with -b->
         # In the case of word -> punct -> punct -> word, remove all the intervening puncts.
+        # Do not do this if word1 is root.
         if sentence.node[punct].get('pos') not in PUNCTUATION_POS:
             if verbose:
                 print(
@@ -74,7 +75,9 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
                 )
             return None
         word1 = heads[0]
-        if word1 != 0:
+        if word1 == 0:
+            return None
+        else:
             while (sentence.node[word1].get('pos') in PUNCTUATION_POS
                               or deptype in PUNCTUATION_RELS):
                 head_of_word1 = head_of(sentence, word1)
