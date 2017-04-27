@@ -43,7 +43,7 @@ def myopen(filename, **kwds):
             with gzip.open(local_path, 'wb') as f:
                 for data in res.iter_content():
                     f.write(data)
-                print("%s is cached" % filename)
+                print("%s is cached" % filename, file=sys.stderr)
         open_file = gzip.open(local_path, mode='rb', **kwds)
     elif filename.endswith('.gz'):
         open_file = gzip.open(filename, mode='rb', **kwds)
