@@ -76,6 +76,11 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
             return None
         word1 = heads[0]
         if word1 == 0:
+            if verbose:
+                print(
+                    "Sentence with punct root! {}".format(str(sentence.start_line)),
+                    file=sys.stderr
+                )
             return None
         else:
             while (sentence.node[word1].get('pos') in PUNCTUATION_POS
