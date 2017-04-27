@@ -147,7 +147,7 @@ class DependencyTreebank(object):
     def sentences(self, verbose=False,
                   strict=False,
                   remove_punct=True,
-                  fix_content_head=CH_CONVERSION_ORDER,
+                  fix_content_head=False,
                   allow_multihead=False,
                   allow_multiple_roots=False):
         """ Yield sentences as DepSentences. """
@@ -170,7 +170,7 @@ class DependencyTreebank(object):
                     if fix_content_head:
                         sentence = from_content_head(
                             sentence,
-                            fix_content_head,
+                            CH_CONVERSION_ORDER,
                             verbose=verbose,
                             strict=strict
                         )
