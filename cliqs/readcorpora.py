@@ -121,7 +121,7 @@ class DependencyTreebank(object):
     ch = pyr.m()
     high = pyr.m()
 
-    def __init__(self, filename, load_into_memory=False, ch={}, high={}):
+    def __init__(self, filename=None, load_into_memory=False, ch={}, high={}):
         self.filename = filename
         self._sentences = []
         self._sentences_in_memory_flags = {}
