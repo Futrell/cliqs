@@ -213,7 +213,7 @@ def sentence_to_conllu(s):
 # roots_of : DiGraph -> Iterator Int     
 def roots_of(s):
     """ Yield the root nodes of a sentence. """
-    for node, in_degree in s.in_degree().items():
+    for node, in_degree in dict(s.in_degree()).items():
         if in_degree == 0:
             yield node
 
