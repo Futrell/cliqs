@@ -1,14 +1,15 @@
-library(tidyr)
-library(dplyr)
+library(tidyverse)
 library(lme4)
 library(lmerTest)
-library(readr)
 library(broom)
 library(stringr)
 
-DATA_FILENAME = "melted_20170426_fh.csv"
+DATA_FILENAME = "mindep_20180208_fh_melted.csv"
 BASELINE = "real"
-COMPARISONS = c("free random")#, "fixed random") #, "free head-fixed random", "free head-consistent random")
+COMPARISONS = c("free random", "fixed random per language", "free head-consistent random", "fixed head-consistent random", "nonprojective free random", "nonprojective free head-consistent random")
+
+args <- commandArgs(TRUE)
+the_lang = args[1]
 
 fit_by_lang = function(dm, baseline, comparison) {
     ## Make sure the real sentences are the baseline
@@ -20,40 +21,42 @@ fit_by_lang = function(dm, baseline, comparison) {
         mutate(real=factor(real, levels=c(baseline, comparison))) %>%
         do(
             lang=first(.$lang),
-            model2 = lmer(value ~ length2 * real + (1+real|start_line), data=., REML=F),
-            model2_noint = lmer(value ~ length2 + real + (1+real|start_line), data=., REML=F)
+            model = lmer(value ~ length * real + (1+real|start_line), data=., REML=F),
+            model_noint = lmer(value ~ length + real + (1+real|start_line), data=., REML=F)
         )
 }
 
 summarise_model = function(dm) {
-    dm %>% summarise(
-        coef2 = tidy(model2)[4,]$estimate,
-        p = tidy(anova(model2, model2_noint))$p.value[2],
-        lang = lang
+    dm %>%
+        summarise(
+            coef = tidy(model)[4,]$estimate,
+            p = tidy(anova(model, model_noint))$p.value[2],
+            lang = lang
     )
 }
 
-d = read_csv(DATA_FILENAME) %>%
-    filter(real != "Unnamed: ") %>%
-    select(-X1) %>%
-    mutate(length2 = length^2,
-           start_line = as.factor(start_line))
 
-result = data.frame()
-
-for (comparison in COMPARISONS) {
+run_comparison = function(comparison) {    
     print(str_c("Running comparison to ", comparison))
-    subresult = d %>%
+    d %>%
         group_by(lang) %>%
           fit_by_lang(BASELINE, comparison) %>%
           summarise_model() %>%
           ungroup() %>%
         mutate(comparison=comparison)
-    result = rbind(result, subresult)
 }
 
-write.csv(result, file="model_coefficients.csv")
+d = read_csv(DATA_FILENAME) %>%
+    select(-X1) %>%
+    filter(lang == the_lang) %>%
+    filter(real != "Unnamed: ") %>%
+    mutate(start_line = as.factor(start_line))
 
-# The quadratic model is worse than the linear one in 4/34 languages
-# (by AIC/BIC using anova). So let's just use the quadratic model going
-# forward. (The double-quadratic model is worse in all languages.)
+result = COMPARISONS %>%
+    map(run_comparison) %>%
+    reduce(bind_rows, tibble())
+
+outfilename = str_c(the_lang, "_model_coefficients_20180208.csv")
+
+write.csv(result, file=outfilename)
+

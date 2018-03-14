@@ -18,7 +18,7 @@ from . import deptransform
 from . import depgraph
 
 EMPTY_SET = frozenset({})
-CH_CONVERSION_ORDER = ['case', 'cop', 'mark']
+CH_CONVERSION_ORDER = ['cc', 'case', 'cop', 'mark']
 script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 DATA_DIR = script_dir + "data/cliqs"
 
@@ -92,7 +92,7 @@ def from_content_head(ds, rels, verbose=False, strict=False):
     for rel in rels:
         ds = from_content_head_rel(ds, rel, verbose=verbose, strict=strict)
         if ds is None:
-            return ds
+            return None
     return ds
 
 
@@ -148,6 +148,8 @@ class DependencyTreebank(object):
                   strict=False,
                   remove_punct=True,
                   fix_content_head=False,
+                  collapse_flat=True,
+                  remove_fw=False,
                   allow_multihead=False,
                   allow_multiple_roots=False):
         """ Yield sentences as DepSentences. """
@@ -162,6 +164,19 @@ class DependencyTreebank(object):
                     sentence.high = self.high
                     if remove_punct:
                         sentence = deptransform.remove_punct_from_sentence(
+                            sentence,
+                            verbose=verbose,
+                        )
+                        if sentence is None:
+                            continue
+                    if collapse_flat:
+                        sentence = deptransform.collapse_flat(
+                            sentence, verbose=verbose
+                        )
+                        if sentence is None:
+                            continue
+                    if remove_fw:
+                        sentence = deptransform.remove_function_words(
                             sentence,
                             verbose=verbose,
                         )
@@ -339,16 +354,15 @@ class UDTDependencyTreebank(CoNLLDependencyTreebank):
 
 # based on but NOT IDENTICAL TO https://universaldependencies.github.io/docs/u/dep/index.html
 # I've customized the categories to my own purposes here.
-UD_CLAUSAL_CORE_RELS = set("nsubj nsubjpass csubj csubjpass dobj iobj ccomp xcomp".split())  # {UD clausal core}
-UD_CLAUSAL_NONCORE_RELS = set("nmod advcl advmod neg expl".split())  # {UD clausal noncore} + {"expl"}
-UD_NOUN_RELS = set("nummod appos nmod acl amod det neg".split())  # {UD noun}
+UD_CLAUSAL_CORE_RELS = set("nsubj nsubjpass csubj csubjpass dobj iobj ccomp xcomp obj".split())  # {UD clausal core}
+UD_CLAUSAL_NONCORE_RELS = set("advcl advmod neg expl obl".split())  # {UD clausal noncore} + {"expl"}
+UD_NOUN_RELS = set("nummod appos nmod acl amod det neg clf".split())  # {UD noun}
 UD_MARKING_RELS = set("case mark".split())  # {UD case-mark-preposition-possessive} + {UD other} - {"punct"}
-UD_COMPOUNDING_RELS = set("compound name mwe foreign goeswith".split())  # {UD compounding and unanalyzed}
+UD_COMPOUNDING_RELS = set("compound fixed flat flat/name flat/foreign mwe goeswith".split())  # {UD compounding and unanalyzed}
 UD_JOINING_RELS = set("list dislocated parataxis remnant reparandum".split())  # {UD loose joining}
 UD_WEIRD_VERB_RELS = set("aux auxpass cop".split())  # {UD Auxiliary}
 UD_DISCOURSE_RELS = set("vocative discourse".split())  # {UD nominal} - {"expl"}
 UD_COORDINATION_RELS = set("conj cc".split())  # {UD Coordination} - {"punct"}
-
 
 class UniversalDependency1Treebank(CoNLLDependencyTreebank):
     ch = pyr.pmap({
@@ -356,17 +370,22 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
         'case': True,
         'cop': True,
         'aux': True,
+        'cc': True,
     })
 
+    # in CH conversion, we have the choice of whether to attach certain dependents
+    # to the new head (high) or the old head (low). Which should we attach high?
+    # see the test case test_reverse_content_head_complex in deptransform for
+    # justification for some of these.
     high = pyr.pmap({
-        'case': (
+        'case': ( 
             UD_CLAUSAL_CORE_RELS
-            | UD_CLAUSAL_NONCORE_RELS - {'nmod'}
+            | UD_CLAUSAL_NONCORE_RELS - {'nmod', 'obl'}
             | UD_WEIRD_VERB_RELS
-            | {'mark'}
+            | {'mark'} # if there's an outgoing "case" it's a sisters error
         ),
-        'cop': (
-            UD_CLAUSAL_CORE_RELS - {'dobj'}  # copulas never have dobj???
+        'cop': ( # lots of high rels for this one
+            UD_CLAUSAL_CORE_RELS - {'dobj', 'obj'}  # copulas never have dobj???
             | UD_CLAUSAL_NONCORE_RELS
             | UD_JOINING_RELS
             | UD_WEIRD_VERB_RELS
@@ -374,8 +393,9 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
             | UD_COORDINATION_RELS  # "but" always attaches high, "and" often attaches low...
             | {'mark', 'nmod/tmod'}
         ),
-        'mark': EMPTY_SET,
-        'aux': EMPTY_SET,
+        'mark': EMPTY_SET, # no dependents of a complementizer except the verb
+        'aux': EMPTY_SET, # we don't attempt this one anyway...
+        'cc': EMPTY_SET, # everything attaches low for conjunctions
     })
 
     def analyze_compound_line(self, parts, verbose=False):

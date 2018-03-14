@@ -373,8 +373,13 @@ def head_of(s, word_id):
     """ Return the single head of word_id in s. 
     Die if word_id has 0 or more than 1 heads. 
     """
-    return the_only(heads_of(s, word_id))
-
+    heads = heads_of(s, word_id)
+    if len(heads) == 1:
+        return heads[0]
+    elif len(heads) > 1:
+        raise ValueError("Multiple heads for word %s in sentence %s" % (word_id, s))
+    else:
+        raise ValueError("No head for word %s in sentence %s" % (word_id, s))
 
 # get_head_of : DiGraph x Int -> Maybe Int
 def get_head_of(s, word_id, default=None):

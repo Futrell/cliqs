@@ -46,6 +46,10 @@ def deplen_by_deptype(thing_fn, sentence, linearization=None, fn=sum):
 def sum_of_abs(xys):
     return sum(abs(x - y) for x, y in xys)
 
+def abs_of_diff(xy):
+    x, y = xy
+    return abs(x - y)
+
 def embedding_depths(sentence, linearization=None, include_root=False):
     if linearization is None:
         li = {w_id : w_id for w_id in sentence.nodes()}
@@ -53,7 +57,7 @@ def embedding_depths(sentence, linearization=None, include_root=False):
         li = {w_id:i for i, w_id in enumerate(linearization)}
 
     try:
-        for n in sentence.nodes():
+        for n in sorted(sentence.nodes()):
             if n != 0 or include_root:
                 # How many arcs are there over this node?
                 num_arcs = 0
@@ -89,26 +93,23 @@ def sum_embedding_depth(*args, **kwds):
 def max_embedding_depth(*args, **kwds):
     return max(embedding_depths(*args, **kwds))
 
-def deplen(sentence, linearization=None, include_root=False, fn=sum_of_abs, filters=None):
+def deps(sentence, linearization=None, include_root=False, filters=None):
     if filters is None:
         filters = []
     if not include_root:
         filters.insert(0, lambda s, l, hd: hd[0] != 0)
     if linearization is None:
         linearization_index = {w_id : w_id for w_id in sentence.nodes()}
-        return fn([(h_id, d_id)
-                  for h_id, d_id in sentence.edges_iter()
-                  if all(f(sentence, linearization_index, (h_id, d_id))
-                         for f in filters)
-                  ])
+        for h_id, d_id in sorted(sentence.edges()):
+            if all(f(sentence, linearization_index, (h_id, d_id)) for f in filters):
+                yield (h_id, d_id)
     else:
         try:
             linearization_index = {w_id:i for i, w_id in enumerate(linearization)}
-            return fn([(linearization_index[h_id], linearization_index[d_id])
-                    for h_id, d_id in sentence.edges_iter()
-                    if all(f(sentence, linearization_index, (h_id, d_id))
-                           for f in filters)
-                       ])
+            for h_id, d_id in sorted(sentence.edges()):
+                if all(f(sentence, linearization_index, (h_id, d_id))
+                       for f in filters):
+                    yield (linearization_index[h_id], linearization_index[d_id])
         except KeyError:
             error_str = "Could not get deplen for sentence because it "
             error_str += "contains an edge "
@@ -117,6 +118,14 @@ def deplen(sentence, linearization=None, include_root=False, fn=sum_of_abs, filt
             error_str += "\nEdges: %s" % sentence.edges()
             error_str += "\nNodes: %s" % sentence.nodes()
             raise ValueError(error_str)
+
+def deplen(sentence, linearization=None, include_root=False, fn=sum_of_abs, filters=None):
+    the_deps = deps(sentence, linearization=linearization, include_root=include_root, filters=filters)
+    return fn(list(the_deps))
+
+def deplens(sentence, linearization=None, include_root=False, fn=abs_of_diff, filters=None):
+    the_deps = deps(sentence, linearization=linearization, include_root=include_root, filters=filters)
+    return map(fn, the_deps)
 
 def filter_oracular_reductions(sentence, lin, hd):
     """in a structure with right-sisters A->B A->C A->D,
@@ -394,7 +403,7 @@ def test_deplen():
     import corpora
     s = next(corpora.hamledt2_corpora['de'].sentences())
     assert deplen(s) == 16
-    assert deplen(s, s.nodes()) == 16
+    assert deplen(s, sorted(s.nodes())) == 16
     assert deplen(s, list(reversed(s.nodes()))) == 16
 
 def test_best_case_memory_cost():

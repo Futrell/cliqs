@@ -1,5 +1,5 @@
 """ deptransform
-Functions dependency graph -> dependency graph
+Functions of type dependency graph -> dependency graph
 
 There is no guarantee that these functions leave the input graph unmutated;
 to ensure purity, call a function f(sentence, *a) as immutably(f)(sentence, *a).
@@ -15,12 +15,14 @@ import copy
 import functools
 
 import networkx as nx
+import rfutils
 
-from .depgraph import heads_of, head_of, dependents_of, gap_degree
+from .depgraph import heads_of, head_of, dependents_of, gap_degree, words_of, root_of, roots_of
 
 VERBOSE = False
-STRICT = True
-STRICT_PROJECTIVITY = False
+STRICT = True # eliminate sentences that cannot be transformed from CH
+STRICT_COLLAPSE = False # eliminate sentences where flats cannot be collapsed
+STRICT_PROJECTIVITY = False # eliminate sentences where CH conversion creates nonprojectivity
 
 def immutably(f):
     @functools.wraps(f)
@@ -29,18 +31,159 @@ def immutably(f):
         return f(sentence_, *a, **k)
     return wrapped
 
-PUNCTUATION_POS = set(". punc punct PUNC PUNCT wp".split())
-PUNCTUATION_RELS = set("punct p WP".split())
-def remove_punct_from_sentence(sentence, verbose=VERBOSE): 
+def sequence_continuous(xs):
+    xs = list(xs)
+    sliding = zip(xs, xs[1:])
+    return all(x+1 == y for x, y in sliding)
+
+FLAT_RELS = frozenset({
+    'flat', # TODO make sure this should be / instead of :
+    'flat:name',
+    'flat:foreign',
+    'flat:repeat',
+    'flat:title',
+    'goeswith',
+    'fixed'
+})
+def collapse_flat(sentence, rels=FLAT_RELS, verbose=VERBOSE):
+    original_sentence = copy.deepcopy(sentence)
+    original_words = " ".join(map(str, words_of(sentence)))
+    nodes = list(reversed(sorted(sentence.nodes())))
+    nodes_hitlist = []
+    edges_hitlist = []
+    root = root_of(sentence)
+    nodes = list(reversed([d for _, d in nx.bfs_edges(sentence, root)]))
+    nodes.append(root)
+    for h in nodes:
+        flats = sorted([
+            d for _, d, dt in sentence.out_edges(h, data=True)
+            if dt['deptype'] in rels
+        ])
+        if flats and sequence_continuous(flats):
+            words = sorted(flats + [h])
+            new_word = " ".join(sentence.node[d]['word'] for d in words)
+            sentence.node[h]['word'] = new_word
+            nodes_hitlist.extend(flats)
+            edges_hitlist.extend((h,d) for d in flats)
+            for d in flats:
+                for _, dd, dt in sentence.out_edges(d, data=True):
+                    if dt['deptype'] not in rels:
+                        sentence.add_edge(h, dd, dt)
+        elif not sequence_continuous(flats) and verbose:
+            print("Discontinuous flat at line %s node %s" % (
+                sentence.start_line, str(h)
+            ), file=sys.stderr)
+    for h, d in edges_hitlist:
+        sentence.remove_edge(h, d)
+    for node in nodes_hitlist:
+        sentence.remove_node(node)
+    new_words = " ".join(map(str, words_of(sentence)))
+    # Make sure nothing went wrong. If it did, ditch this process.
+    if original_words != new_words or len(list(roots_of(sentence))) > 1:
+        if verbose:
+            print("Warning, could not collapse sentence start line %s" % sentence.start_line,
+                    file=sys.stderr)
+        if STRICT_COLLAPSE:
+            return None
+        else:
+            return original_sentence
+    return renumber_words(sentence)
+
+def test_collapse_flat():
+    # most basic case
+    s = nx.DiGraph([(0, 1), (0, 2), (0, 3), (0, 4)])
+    for i, letter in enumerate("abcde"):
+        s.node[i]['word'] = letter
+    s.edge[0][1]['deptype'] = 'flat'
+    s.edge[0][2]['deptype'] = 'flat'
+    s.edge[0][3]['deptype'] = 'flat'
+    s.edge[0][4]['deptype'] = 'flat'
+
+    s2 = immutably(collapse_flat)(s, rels={'flat'})
+    assert len(s2) == 1
+    assert s2.node[0]['word'] == "a b c d e"
+
+
+    # this scenario should not arise in UD 2.1; but it does.
+    # see af/all.conllu line 4867
+    s = nx.DiGraph([(0, 1), (1, 2), (2, 3)])
+    for i, letter in enumerate("abcd"):
+        s.node[i]['word'] = letter
+    s.edge[0][1]['deptype'] = 'flat'
+    s.edge[1][2]['deptype'] = 'flat'
+    s.edge[2][3]['deptype'] = 'flat'
+
+    s = nx.DiGraph([(3, 2), (2, 1), (1, 0)])
+    for i, letter in enumerate("abcd"):
+        s.node[i]['word'] = letter
+    s.edge[3][2]['deptype'] = 'flat'
+    s.edge[2][1]['deptype'] = 'flat'
+    s.edge[1][0]['deptype'] = 'flat'
+    
+    s2 = immutably(collapse_flat)(s, rels={'flat'})
+    # also bad, but occurs in af/all.conllu line 18801
+    assert len(s2) == 1
+    assert s2.node[0]['word'] == "a b c d"
+
+    s = nx.DiGraph([(3, 0), (3, 1), (3, 2)])
+    for i, letter in enumerate("abcd"):
+        s.node[i]['word'] = letter
+    s.edge[3][0]['deptype'] = 'flat'
+    s.edge[3][1]['deptype'] = 'flat'
+    s.edge[3][2]['deptype'] = 'flat'
+    
+    s2 = immutably(collapse_flat)(s, rels={'flat'})
+    # might as well try this possibility
+    assert len(s2) == 1
+    assert s2.node[0]['word'] == "a b c d"
+
+    s = nx.DiGraph([(0, 1), (0, 2), (0, 3), (3, 4)])
+    for i, letter in enumerate("abcde"):
+        s.node[i]['word'] = letter
+    s.edge[0][1]['deptype'] = 'flat'
+    s.edge[0][2]['deptype'] = 'flat'
+    s.edge[0][3]['deptype'] = 'flat'
+    s.edge[3][4]['deptype'] = 'other'
+
+    # shouldn't happen in UD, but nonetheless it does
+    s2 = immutably(collapse_flat)(s, rels={'flat'})
+    assert len(s2) == 2
+    assert s2.node[0]['word'] == "a b c d"
+    assert s2.edge[0][1]['deptype'] == 'other'
+
+# remove everything except nouns, verbs, adjectives, adverbs, numerals,
+FW_POS = frozenset("ADP AUX CCONJ DET PART PRON SCONJ PUNCT".split())
+FW_RELS = frozenset("aux case cc det expl mark punct")
+def remove_function_words(sentence, verbose=VERBOSE):
+    return remove_from_sentence(
+        sentence,
+        badpos=FW_POS,
+        badrel=FW_RELS,
+        verbose=VERBOSE,
+        strict=False,
+    )
+    
+PUNCTUATION_POS = frozenset(". punc punct PUNC PUNCT wp".split())
+PUNCTUATION_RELS = frozenset("punct p WP".split())
+def remove_punct_from_sentence(sentence, verbose=VERBOSE):
+    return remove_from_sentence(
+        sentence,
+        badpos=PUNCTUATION_POS,
+        badrel=PUNCTUATION_RELS,
+        verbose=VERBOSE,
+        strict=True,
+    )
+
+def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False): 
     """ Destructively remove punctuation from the given sentence. """
     edges_to_die = [
         (h,d,t) for h,d,t in sentence.edges_iter(data='deptype')
-        if t in PUNCTUATION_RELS
+        if t.split(":")[0] in badrel # TODO make sure it's : not /
     ]
     words_to_die = {d for _, d, _ in edges_to_die}
     words_to_die |= {
         w for w, w_attr in sentence.nodes(data=True)
-        if w_attr.get('pos') in PUNCTUATION_POS
+        if w_attr.get('pos') in badpos
     }
     punctuation_as_head = {
         (h, d, t)
@@ -57,20 +200,23 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
         # We want to remove punct and the relation -a->, and connect word1 to word2 with -b->
         # In the case of word -> punct -> punct -> word, remove all the intervening puncts.
         # Do not do this if word1 is root.
-        if sentence.node[punct].get('pos') not in PUNCTUATION_POS:
-            if verbose:
+        if sentence.node[punct].get('pos') not in badrel:
+            if verbose and strict:
                 print(
-                    "Non-punctuation head with punct relation type! {}".format(
+                    "Head with illegal relation type! {}-{}->, {}".format(
+                        sentence.node[punct].get('pos'),
+                        deptype,
                         str(sentence.start_line)
                     ),
                     file=sys.stderr
                 )
-            return None
+            if strict:
+                return None
         heads = heads_of(sentence, punct)
         if len(heads) > 1:
             if verbose:
                 print(
-                    "Punct with multiple heads! {}".format(str(sentence.start_line)),
+                    "Illegal word with multiple heads! {}".format(str(sentence.start_line)),
                     file=sys.stderr
                 )
             return None
@@ -78,13 +224,13 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
         if word1 == 0:
             if verbose:
                 print(
-                    "Sentence with punct root! {}".format(str(sentence.start_line)),
+                    "Sentence with illegal root! {}".format(str(sentence.start_line)),
                     file=sys.stderr
                 )
             return None
         else:
-            while (sentence.node[word1].get('pos') in PUNCTUATION_POS
-                              or deptype in PUNCTUATION_RELS):
+            while (sentence.node[word1].get('pos') in badpos
+                              or deptype.split(":")[0] in badrel):
                 head_of_word1 = head_of(sentence, word1)
                 deptype = sentence.edge[head_of_word1][word1].get('deptype')
                 word1 = head_of_word1
@@ -99,9 +245,8 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
         if verbose:
             print("Empty sentence! {}".format(str(sentence.start_line)), file=sys.stderr)
         return None
-    
-    nodes_represented_as_dependents = {d for _, d in sentence.edges_iter()}
-    assert set(sentence.nodes()) - nodes_represented_as_dependents == {0}
+
+    assert len(list(roots_of(sentence))) == 1
 
     return renumber_words(sentence)
 
@@ -319,14 +464,14 @@ def reversible_paths(sentence, rel, verbose=VERBOSE):
                 d = relevant_outs[0]
                 if any(r == rel for _, _, r in sentence.out_edges(d, data='deptype')):
                     if verbose:
-                        print("Unfixable content-head dependency (chain) from node %s in sentence %s" % (h, sentence), file=sys.stderr)
+                        print("Unfixable content-head dependency (chain) from node %s in sentence %s type %s" % (h, sentence, rel), file=sys.stderr)
                     yield None
                 else:
                     yield h, d
                     untouchables.add(d)
         else:
             if verbose:
-                print("Unfixable content-head dependency (sisters) from node %s in sentence %s" % (h, sentence), file=sys.stderr)
+                print("Unfixable content-head dependency (sisters) from node %s in sentence %s type %s" % (h, sentence, rel), file=sys.stderr)
             yield None
 
 def test_reversible_paths():
@@ -351,8 +496,8 @@ def reverse_content_head(sentence,
                          verbose=VERBOSE,
                          strict=STRICT,
                          strict_projectivity=STRICT_PROJECTIVITY):
-    """ Destructively convert dependencies of the form A -x-> B -y-> C, where y is 
-    of type in rels, to A -x-> C -y-> B.
+    """ Destructively convert dependencies of the form A -x-> B -y-> C, where y
+    is of type in rels, to A -x-> C -y-> B.
     Thus, complementizers head their sentences and prepositions head their
     nouns, rather than vice versa.
     """
@@ -362,14 +507,17 @@ def reverse_content_head(sentence,
         if path is None:
             if strict:
                 if verbose:
-                    print("Giving up on sentence %s" % sentence, file=sys.stderr)
+                    print("Giving up on sentence %s"%sentence, file=sys.stderr)
                 return None
         else:
             h, d = path
             sentence = lift_head(sentence, h, d, high_rels)
-    if (verbose or strict_projectivity) and gap_degree(sentence) > old_gap_degree:
+    if (verbose or strict_projectivity) and gap_degree(sentence)>old_gap_degree:
         if verbose:
-            print("Created nonprojectivity in sentence %s" % sentence, file=sys.stderr)
+            print(
+                "Created nonprojectivity in sentence %s" % sentence,
+                file=sys.stderr
+            )
         elif strict_projectivity:
             if verbose:
                 print("Giving up on sentence %s"  % sentence, file=sys.stderr)

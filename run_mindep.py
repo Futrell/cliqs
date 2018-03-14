@@ -13,6 +13,7 @@ import csv
 import pickle
 
 import rfutils
+import networkx as nx
 #from distributed import Executor, as_completed
 
 import cliqs.mindep as mindep
@@ -20,7 +21,14 @@ import cliqs.opt_mindep as opt_mindep
 import cliqs.linearize as lin
 import cliqs.corpora as corpora
 
-OPTS = {'fix_content_head': False}
+OPTS = {
+    'fix_content_head': False,
+    'collapse_flat': True,
+    'verbose': True,
+    'remove_fw': False,
+    'remove_punct': True,
+}
+LOWER_LENGTH_LIMIT = 3
 
 def load_all_corpora_into_memory(corpora):
     for corpus in corpora:
@@ -39,8 +47,6 @@ CONDITIONING = opt_mindep.get_deptype
 def load_linearization_model(lang, spec):
     return with_open(MODEL_FILENAME_TEMPLATE % (lang, spec), 'rb', pickle.load)
 
-LANGS = set(corpora.ud_corpora.keys())
-
 # Make a dataframe from applying deterministic functions to each sentence, and
 # from applying random sampling functions to each sentence NUM_RANDOM_SAMPLES
 # times. Each column is the result of applying a certain function or a certain
@@ -50,14 +56,18 @@ LANGS = set(corpora.ud_corpora.keys())
 # ..., random_f_a_100, ...
 
 # In principle it seems it should be faster to apply parallelism here at the
-# level of sentences, hence the parallel flag for this function. But in practice
+# level of sentences, hence the parallel flag for this function. B{[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[dxut in practice
 # it looks like that's actually slower than parallelizing over corpora, for some
 # reason. Maybe with more cpu-intensive linearization procedures there would be
 # gains from sentence-level parallelism?
 
 NUM_RANDOM_SAMPLES = 100
 
-def generate_rows(sentences, lang, deterministic_fns, random_fns, parallel=False):
+def generate_rows(sentences,
+                  lang,
+                  deterministic_fns,
+                  random_fns,
+                  parallel=False):
     def gen_row(i_s):
         i, s = i_s
         s = corpora.DepSentence.from_digraph(s)
@@ -91,8 +101,9 @@ def generate_rows(sentences, lang, deterministic_fns, random_fns, parallel=False
         # top-level pmap, you have to do the mapping over sentences like this, 
         # lest you get pickling errors. 
         def gen_rows():
-            for i_s in enumerate(sentences):
-                yield gen_row(i_s)
+            for i, s in enumerate(sentences):
+                if len(s) > LOWER_LENGTH_LIMIT:
+                    yield gen_row((i, s))
         rows = gen_rows()
     return rows
 
@@ -117,8 +128,13 @@ deplen_f = make_reduction_f(mindep.deplen)
 max_embedding_depth_f = make_reduction_f(mindep.max_embedding_depth)
 sum_embedding_depth_f = make_reduction_f(mindep.sum_embedding_depth)
 
+def deptypes(s):
+    for h, d in s.edges():
+        if h != 0:
+            yield s.edge[h][d]['deptype']
 
-
+deplens_f = make_reduction_f(mindep.deplens)
+deptypes_f = make_reduction_f(deptypes)
 
 # Deterministic dep len functions
 
@@ -230,6 +246,37 @@ def random_sample_fullyfree(s, *_):
     random.shuffle(lin)
     return mindep.deplen(s, linearization=[0] + lin)
 
+def random_sample_fullyfree_headfinal(s, *_):
+    # still broken...
+    def shift_right_of_descendants(xs, x):
+        i = xs.index(x)
+        descendants = closure[x]
+        indices = [i for i, x in enumerate(xs) if x in descendants]
+        if not indices:
+            return xs # no change necessary
+        right_boundary = indices[-1] + 1
+        if right_boundary <= i: # CAREFUL
+            return xs # no change necessary
+        else:
+            return itertools.chain(
+                splice(xs[:right_boundary], i),
+                [x],
+                xs[right_boundary:]
+            )
+    # make a random linearization
+    lin = [n for n in s.nodes() if n != 0]
+    random.shuffle(lin)
+    closure = [nx.descendants(s, n) for n in sorted(s.nodes())]
+    # shift each word to be to the right of its transitive descendents
+    for x in lin:
+        lin = list(shift_right_of_descendants(lin, x))
+    assert sorted(lin) == list(range(1, len(s)))
+    return lin
+    
+def splice(xs, i):
+    for	j, x in	enumerate(xs):
+        if j !=	i:
+            yield x    
 
 # Model-based functions
 
@@ -265,12 +312,12 @@ def filter_edges(s, filters):
             s.remove_edge(*edge)
     return s
 
-def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
+def build_it(lang, corpora=corpora.corpora, parallel=False):
     return generate_rows(
         corpora[lang].sentences(**OPTS),
         lang,
         {
-            'deplen': deplen_f(identity),
+            'deplen': real_deplen,
             #'max_depth': max_embedding_depth_f(identity),
             #'sum_depth': sum_embedding_depth_f(identity),
             #'bcmc': real_best_case_memory_cost,
@@ -284,7 +331,7 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'rand_max_depth': max_embedding_depth_f(random_sample_nobias),
             #'rand_sum_depth': sum_embedding_depth_f(random_sample_nobias),
             
-            #'rand_proj_lin_r_lic': deplen_f(random_sample_proj_lin_spec('r|lic')),
+            'rand_proj_lin_r_lic': deplen_f(random_sample_proj_lin_spec('r|lic')),
             #'rand_proj_lin_dr_lic': deplen_f(random_sample_proj_lin_spec('dr|lic')),
             #'rand_proj_lin_hdr_lic': deplen_f(random_sample_proj_lin_spec('hdr|lic')),
             
@@ -292,19 +339,20 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
             #'rand_proj_lin_dr_mle': deplen_f(random_sample_proj_lin_spec('dr|moo')),
             #'rand_proj_lin_hdr_mle': deplen_f(random_sample_proj_lin_spec('hdr|moo')),
             
-            #'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
+            'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
             #'rand_proj_lin_acceptable': deplen_f(random_sample_proj_lin_spec('hdr|n123')),
-            #'rand_proj_lin_meaningsame': deplen_f(random_sample_proj_lin_spec('hdr|n3')),
+            'rand_proj_lin_meaningsame': deplen_f(random_sample_proj_lin_spec('hdr|n3')),
             
             #'rand_bcmc': random_sample_best_case_memory_cost,
-            #'rand_deplen_fixed': random_sample_weighted,
+            #'rand_deplen_fixed': random_sample_weighted, # missing lin
             #'rand_deplen_fixed_per_lang': random_sample_weighted_per_lang,
             #'rand_weight_bcmc': random_sample_weighted_best_case_memory_cost,
-            #'rand_deplen_headfinal': random_sample_headfinal,
-            #'rand_deplen_headfinal_fixed': random_sample_weighted_headfinal,
+            #'rand_deplen_headfinal': random_sample_headfinal, 
+            #'rand_deplen_headfinal_fixed_per_lang': random_sample_weighted_headfinal_per_lang,
             #'rand_known_order': random_sample_known_order,
             #'rand_deplen_headfixed': random_sample_opt(move_head=False),
             #'rand_deplen_fullyfree': random_sample_fullyfree,
+            #'rand_deplen_fullyfree_headfinal': deplen_f(random_sample_fullyfree_headfinal),
         },
         parallel=parallel,
     )
@@ -319,12 +367,15 @@ def postprocess(df):
 
 def name_fn(var):
     d = [
-        ('rand_deplen_headfixed', 'free head-fixed random'),        
+        ('rand_deplen_headfixed', 'free head-fixed random'),
+        ('rand_deplen_headfinal_fixed_per_lang', 'fixed head-consistent random per language'),        
         ('rand_deplen_headfinal_fixed', 'fixed head-consistent random'),
         ('rand_deplen_headfinal', 'free head-consistent random'),              
         ('rand_bcmc_fixed', 'fixed random bcmc'),        
         ('rand_bcmc', 'free random bcmc'),
+        ('rand_deplen_fixed_per_lang', 'fixed random per language'),
         ('rand_deplen_fixed', 'fixed random'),
+        ('rand_deplen_fullyfree_headfinal', 'nonprojective free head-consistent random'),        
         ('rand_deplen_fullyfree', 'nonprojective free random'),
         ('rand_deplen', 'free random'),        
         ('rand_known_order', 'known random'),
@@ -354,6 +405,8 @@ def main(cmd, *args):
         langs = tuple(args)
         if langs == ('ud',):
             langs = corpora.ud_langs
+        elif langs == ('pud',):
+            langs = corpora.pud_langs
         rows = rfutils.flat(build_it(lang, parallel=False) for lang in langs)
         first_row = rfutils.first(rows)
         writer = csv.DictWriter(sys.stdout, first_row.keys())

@@ -259,7 +259,7 @@ def get_linearization(sentence, weights, thing_fn=DEFAULT_THING_FN):
     def linearize_children(node):
         phrase_with_weights = [(0, node)]
         append_to = phrase_with_weights.append
-        for h, d, dt in sentence.out_edges_iter(node, data=True):
+        for h, d, dt in sorted(sentence.out_edges(node, data=True)):
             append_to((weights[thing_fn(sentence, (h, d, dt))], d))
         phrase_with_weights.sort()
         return [linearize_children(child_id) if child_id != node else node

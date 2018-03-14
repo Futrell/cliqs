@@ -29,13 +29,14 @@ hamledt_stanford_path_template = data_dir + "hamledt2/%s/stanford/conll/all.conl
 hamledt2_stanford_path_template = data_dir + "2.0/%s/stanford/all.conll"
 hamledt2plus_stanford_path_template = data_dir + "hamledt2plus/%s/stanford/all.conll"
 hamledt3_stanford_path_template = data_dir + "hamledt3/%s/all.conllu"
-ud_path_template = data_dir + "ud-treebanks-v2.0/%s/all.conllu"
-ud_train_template = data_dir + "ud-treebanks-v2.0/%s/%s-ud-train.conllu"
-ud_dev_template = data_dir + "ud-treebanks-v2.0/%s/%s-ud-dev.conllu"
-ud_test_template = data_dir + "ud-treebanks-v2.0/%s/%s-ud-test.conllu"
+ud_path_template = data_dir + "ud-treebanks-v2.1/%s/all.conllu"
+ud_train_template = data_dir + "ud-treebanks-v2.1/%s/%s-ud-train.conllu"
+ud_dev_template = data_dir + "ud-treebanks-v2.1/%s/%s-ud-dev.conllu"
+ud_test_template = data_dir + "ud-treebanks-v2.1/%s/%s-ud-test.conllu"
 proiel_torot_template = data_dir + "proiel/%s/all.conll"
 proiel_template = data_dir + "proiel/proiel-treebank-20150725/%s.conll"
-torot_template = data_dir + "proiel/torot/%s.conll"    
+torot_template = data_dir + "proiel/torot/%s.conll"
+mlc_template = data_dir + "MLC_data/UD_%s/%s.conllu"
 
 
 # Now let's keep track of all our data in dictionaries.
@@ -52,11 +53,18 @@ udt_corpora = {
     "sv" : UDTDependencyTreebank(udt2_path_template % "sv"),
 }
 
-ud_langs = "ar be bg ca cop cs cu da de el en es et eu fa fi fr ga gl got grc he hi hr hu id it ja kk ko la lt lv nl no_bokmaal pl pt ro ru sa sk sl sv ta tr ug uk ur vi zh".split()
+ud_langs = "af ar be bg bxr ca cop cs cu da de el en es et eu fa fi fr ga gl got grc he hi hr hsb hu id it ja kk kmr ko la lt lv mr nl no_bokmaal no_nynorsk pl pt pt_br ro ru sa sk sl sme sr sv ta te tr ug uk ur vi yue zh".split()
 
-ud_corpora = {
+pud_langs = "ar_pud cs_pud de_pud en_pud es_pud fi_pud fr_pud hi_pud it_pud ja_pud pt_pud ru_pud sv_pud tr_pud zh_pud".split()
+
+ud_corpora = { 
     lang : UniversalDependency1Treebank(ud_path_template % lang)
     for lang in ud_langs
+}
+
+parallel_corpora = {
+    lang : UniversalDependency1Treebank(ud_path_template % lang)
+    for lang in pud_langs
 }
 
 ud_train_corpora = {
@@ -79,6 +87,15 @@ proiel_torot_langs = "orv cu xcl got grc la".split()
 proiel_torot_corpora = {
     lang : CoNLLDependencyTreebank(proiel_torot_template % lang)
     for lang in proiel_torot_langs
+}
+
+mlc_langs = "Afrikaans Arabic Basque Bulgarian Catalan Chinese Croatian Czech Danish Dutch English Estonian Finnish French Galician Greek Hebrew Hindi Hungarian Italian Latvian Norwegian-Bokmaal Norwegian-Nynorsk Persian Polish Portuguese Romanian Russian-SynTagRus Serbian Slovak Slovenian Spanish-AnCora Swedish Turkish Ukrainian Urdu Vietnamese".split()
+assert len(mlc_langs) == 37
+
+
+mlc_corpora = {
+    lang : UniversalDependency1Treebank(mlc_template % (lang, lang))
+    for lang in mlc_langs
 }
 
 nt_corpora = {
@@ -108,3 +125,5 @@ corpora.update(proiel_torot_corpora) # xcl, orv
 corpora.update(udt_corpora) # ko
 corpora.update(hamledt_corpora) # bn, ca, ru, sk, te, tr
 corpora.update(ud_corpora)
+corpora.update(parallel_corpora)
+corpora.update({'ru_syntagrus' : UniversalDependency1Treebank(ud_path_template % 'ru_syntagrus')})
