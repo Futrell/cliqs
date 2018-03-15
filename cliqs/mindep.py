@@ -26,7 +26,7 @@ def deplen_by_deptype(thing_fn, sentence, linearization=None, fn=sum):
     if linearization is None:
         linearization = sorted(sentence.nodes())
     deplens = Counter()
-    for h_id, d_id, dt in sentence.edges_iter(data=True):
+    for h_id, d_id, dt in sentence.edges(data=True):
         if h_id != 0:
             try:
                 linearization_index = {w_id : i
@@ -178,7 +178,7 @@ def _randlin_projective(sentence,
                         move_deps=True):
     def expand_randomly(word_id, linearization):
         word_position = linearization.index(word_id)
-        children = [w_id for _, w_id in sentence.out_edges_iter(word_id)]
+        children = [w_id for _, w_id in sentence.out_edges(word_id)]
         if head_final_bias and random.random() < head_final_bias: # if flip, hf
             random.shuffle(children)
             children.append(word_id)
