@@ -28,7 +28,7 @@ udt2_path_template = data_dir + "utb2_std/%s/all.conll"
 hamledt_stanford_path_template = data_dir + "hamledt2/%s/stanford/conll/all.conll"
 hamledt2_stanford_path_template = data_dir + "2.0/%s/stanford/all.conll"
 hamledt2plus_stanford_path_template = data_dir + "hamledt2plus/%s/stanford/all.conll"
-hamledt3_stanford_path_template = data_dir + "hamledt3/%s/all.conllu"
+hamledt3_stanford_path_template = data_dir + "hamledt3/%s/all.conllu" 
 ud_path_template = data_dir + "ud-treebanks-v2.1/%s/all.conllu"
 ud_train_template = data_dir + "ud-treebanks-v2.1/%s/%s-ud-train.conllu"
 ud_dev_template = data_dir + "ud-treebanks-v2.1/%s/%s-ud-dev.conllu"
@@ -37,7 +37,7 @@ proiel_torot_template = data_dir + "proiel/%s/all.conll"
 proiel_template = data_dir + "proiel/proiel-treebank-20150725/%s.conll"
 torot_template = data_dir + "proiel/torot/%s.conll"
 mlc_template = data_dir + "MLC_data/UD_%s/%s.conllu"
-
+gd_path_template = "/Users/canjo/code/cliqs/gdoutput/%s-%d.conllu"
 
 # Now let's keep track of all our data in dictionaries.
 
@@ -61,6 +61,15 @@ ud_corpora = {
     lang : UniversalDependency1Treebank(ud_path_template % lang)
     for lang in ud_langs
 }
+    
+gd_corpora = [
+    {
+        lang : UniversalDependency1Treebank(gd_path_template % (lang, i))
+        for lang in ud_langs
+    }
+    for i in range(24)
+]
+    
 
 parallel_corpora = {
     lang : UniversalDependency1Treebank(ud_path_template % lang)

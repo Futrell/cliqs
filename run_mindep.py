@@ -56,7 +56,7 @@ def load_linearization_model(lang, spec):
 # ..., random_f_a_100, ...
 
 # In principle it seems it should be faster to apply parallelism here at the
-# level of sentences, hence the parallel flag for this function. B{[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[dxut in practice
+# level of sentences, hence the parallel flag for this function. But in practice
 # it looks like that's actually slower than parallelizing over corpora, for some
 # reason. Maybe with more cpu-intensive linearization procedures there would be
 # gains from sentence-level parallelism?
@@ -312,7 +312,7 @@ def filter_edges(s, filters):
             s.remove_edge(*edge)
     return s
 
-def build_it(lang, corpora=corpora.corpora, parallel=False):
+def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
     return generate_rows(
         corpora[lang].sentences(**OPTS),
         lang,
@@ -331,7 +331,7 @@ def build_it(lang, corpora=corpora.corpora, parallel=False):
             #'rand_max_depth': max_embedding_depth_f(random_sample_nobias),
             #'rand_sum_depth': sum_embedding_depth_f(random_sample_nobias),
             
-            'rand_proj_lin_r_lic': deplen_f(random_sample_proj_lin_spec('r|lic')),
+            #'rand_proj_lin_r_lic': deplen_f(random_sample_proj_lin_spec('r|lic')),
             #'rand_proj_lin_dr_lic': deplen_f(random_sample_proj_lin_spec('dr|lic')),
             #'rand_proj_lin_hdr_lic': deplen_f(random_sample_proj_lin_spec('hdr|lic')),
             
@@ -339,13 +339,13 @@ def build_it(lang, corpora=corpora.corpora, parallel=False):
             #'rand_proj_lin_dr_mle': deplen_f(random_sample_proj_lin_spec('dr|moo')),
             #'rand_proj_lin_hdr_mle': deplen_f(random_sample_proj_lin_spec('hdr|moo')),
             
-            'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
+            #'rand_proj_lin_perplex': deplen_f(random_sample_proj_lin_spec('hdr+r|oo+n123')),
             #'rand_proj_lin_acceptable': deplen_f(random_sample_proj_lin_spec('hdr|n123')),
-            'rand_proj_lin_meaningsame': deplen_f(random_sample_proj_lin_spec('hdr|n3')),
+            #'rand_proj_lin_meaningsame': deplen_f(random_sample_proj_lin_spec('hdr|n3')),
             
             #'rand_bcmc': random_sample_best_case_memory_cost,
             #'rand_deplen_fixed': random_sample_weighted, # missing lin
-            #'rand_deplen_fixed_per_lang': random_sample_weighted_per_lang,
+            'rand_deplen_fixed_per_lang': random_sample_weighted_per_lang,
             #'rand_weight_bcmc': random_sample_weighted_best_case_memory_cost,
             #'rand_deplen_headfinal': random_sample_headfinal, 
             #'rand_deplen_headfinal_fixed_per_lang': random_sample_weighted_headfinal_per_lang,
@@ -405,9 +405,18 @@ def main(cmd, *args):
         langs = tuple(args)
         if langs == ('ud',):
             langs = corpora.ud_langs
+            the_corpora = corpora.ud_corpora
         elif langs == ('pud',):
             langs = corpora.pud_langs
-        rows = rfutils.flat(build_it(lang, parallel=False) for lang in langs)
+            the_corpora = corpora.parallel_corpora
+        if langs[0] == 'gd':
+            seed = int(langs[1])
+            langs = corpora.ud_langs
+            the_corpora = corpora.gd_corpora[seed]
+        rows = rfutils.flat(
+            build_it(lang, parallel=False, corpora=the_corpora)
+            for lang in langs
+        )
         first_row = rfutils.first(rows)
         writer = csv.DictWriter(sys.stdout, first_row.keys())
         writer.writeheader()
