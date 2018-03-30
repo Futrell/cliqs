@@ -77,7 +77,7 @@ def test_phrase_of():
 
 def draw_sentence(s, **kwds):
     import nxpd
-    for node in s.nodes_iter():
+    for node in s.nodes():
         attr = s.node[node]
         if 'word' not in attr:
             attr['label'] = str(node)
@@ -86,7 +86,7 @@ def draw_sentence(s, **kwds):
         else:
             attr['label'] = attr['word'] + '_%s' % node
         attr['label'] = attr['label'].replace(":", "/")
-    for e1, e2 in s.edges_iter():
+    for e1, e2 in s.edges():
         attr = s.edge[e1][e2]
         if 'deptype' in attr:
             attr['label'] = attr['deptype']
@@ -99,7 +99,7 @@ def draw_sentence(s, **kwds):
 def sentence_to_latex(s, with_deplen=False):
     words = [
         latex_escape(node.get('word', str(n)))
-        for n, node in s.nodes_iter(data=True)
+        for n, node in s.nodes(data=True)
     ]
     deptext = " \& ".join(words)
 
@@ -112,7 +112,7 @@ def sentence_to_latex(s, with_deplen=False):
             return dt
     depedges = "\n".join(
         "\depedge{%s}{%s}{%s}" % (h + 1, d + 1, label(h, d, dt))
-        for h, d, dt in s.edges_iter(data='deptype')
+        for h, d, dt in s.edges(data='deptype')
         if dt != 'root'
     )
     return LATEX_DEPENDENCY_TEMPLATE % (deptext, depedges)
@@ -213,7 +213,7 @@ def sentence_to_conllu(s):
 # roots_of : DiGraph -> Iterator Int     
 def roots_of(s):
     """ Yield the root nodes of a sentence. """
-    for node, in_degree in s.in_degree().items():
+    for node, in_degree in dict(s.in_degree()).items():
         if in_degree == 0:
             yield node
 
@@ -461,7 +461,7 @@ def is_descendent(s, word_id_1, word_id_2):
 
 
 def is_tree(s):
-    degrees = Counter(degree for n, degree in s.in_degree_iter())
+    degrees = Counter(degree for n, degree in s.in_degree())
     return set(degrees.keys()) == {0, 1} and degrees[0] == 1 and degrees[1] > 0
 
 
@@ -659,7 +659,7 @@ def immediate_phrase_has_outward_ordering(s, n):
 def has_monotonic_ordering(s, left_cmp, right_cmp):
     return all(
         immediate_phrase_has_monotonic_ordering(s, n, left_cmp, right_cmp)
-        for n in s.nodes_iter()
+        for n in s.nodes()
     )
 
 
@@ -669,7 +669,7 @@ def has_outward_ordering(s):
 
 def has_pseudo_outward_ordering(s):
     def conditions():
-        for node in s.nodes_iter():
+        for node in s.nodes():
             left = left_dependents_of(s, node)
             if left:
                 first_weight = num_words_in_phrase(s, left[0])

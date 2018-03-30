@@ -56,7 +56,7 @@ def randlin_from_weights(sentence, weights, thing_fn):
     return cost, linearization    
 
 def randlin_fixed_weights(sentence, thing_fn=DEFAULT_THING_FN, head_final=False):
-    deptypes = {thing_fn(sentence, edge) for edge in sentence.edges_iter(data=True)}
+    deptypes = {thing_fn(sentence, edge) for edge in sentence.edges(data=True)}
     weights = rand_fixed_weights(deptypes, head_final=head_final)
     return randlin_from_weights(sentence, weights, thing_fn)
 
@@ -193,7 +193,7 @@ def random_segments(items, maxlen=1):
 
 def get_dependency_types(corpus, thing_fn=DEFAULT_THING_FN):
     return set(thing_fn(sentence, edge) for sentence in corpus.sentences()
-               for edge in sentence.edges_iter(data=True))
+               for edge in sentence.edges(data=True))
 
 def find_optimal_weights_sweep(corpus,
                                weights, # TO BE MUTATED!
@@ -293,7 +293,7 @@ def get_interaction_table(corpus, thing_fn=DEFAULT_THING_FN):
     for sentence in corpus.sentences():
         for node in sentence.nodes():
             deptypes = set(thing_fn(sentence, edge)
-                           for edge in sentence.out_edges_iter(node, data=True))
+                           for edge in sentence.out_edges(node, data=True))
             for deptype in deptypes:
                 d[deptype] |= deptypes
     for deptype, d_set in d.items():

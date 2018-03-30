@@ -177,7 +177,7 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE):
 def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False): 
     """ Destructively remove punctuation from the given sentence. """
     edges_to_die = [
-        (h,d,t) for h,d,t in sentence.edges_iter(data='deptype')
+        (h,d,t) for h,d,t in sentence.edges(data='deptype')
         if t.split(":")[0] in badrel # TODO make sure it's : not /
     ]
     words_to_die = {d for _, d, _ in edges_to_die}
@@ -187,11 +187,11 @@ def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False
     }
     punctuation_as_head = {
         (h, d, t)
-        for h,d,t in sentence.edges_iter(data='deptype')
+        for h,d,t in sentence.edges(data='deptype')
         if h in words_to_die
     }
     more_edges_to_die = [
-        (h,d) for h,d in sentence.edges_iter()
+        (h,d) for h,d in sentence.edges()
         if h in words_to_die or d in words_to_die
     ]
 
@@ -450,7 +450,7 @@ def attach_match(sentence, rels, n1, n2):
 def reversible_paths(sentence, rel, verbose=VERBOSE):
     untouchables = set()
     #edge = copy.deepcopy(sentence.edge)
-    for h in sentence.nodes_iter():
+    for h in sentence.nodes():
         #outs = edge[h] 
         #relevant_outs = [d for d, dt in outs.items() if dt['deptype'] == rel]
         outs = sentence.out_edges(h, data='deptype')
