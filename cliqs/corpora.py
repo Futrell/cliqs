@@ -19,7 +19,7 @@ except OSError:
 
 # Replace with your username and local directory to make things speedier    
 if username == 'canjo':
-    data_dir = "/home/canjo/data/cliqs/"
+    data_dir = "/Users/canjo/data/cliqs/"
 else:
     data_dir = "http://tedlab.mit.edu/datasets/cliqs/"
 
