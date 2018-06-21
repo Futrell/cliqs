@@ -451,7 +451,7 @@ def main(cmd, *args):
         import pandas as pd
         filenames = args
         dfs = map(lambda f: pd.read_csv(f, skipfooter=1), filenames)
-        rows = itertools.chain(
+        rows = rfutils.flat(
             ipostprocess(df, "lang length start_line".split())
             for df in dfs
         )
