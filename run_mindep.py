@@ -370,6 +370,7 @@ def imelt(ds, id_vars):
                 yield dictplus(id_d, {'variable': column, 'value': value})
 
 def ipostprocess(df, id_vars):
+    import pandas as pd
     ds = (pd.Series.to_dict(row) for i, row in df.iterrows())
     melted = imelt(ds, id_vars)
     for d in melted:
