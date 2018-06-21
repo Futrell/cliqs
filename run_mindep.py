@@ -357,17 +357,14 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
         parallel=parallel,
     )
 
-def dictplus(d1, d2):
-    d = d1.copy()
-    d.update(d2)
-    return d
-
 def imelt(ds, id_vars):
     for d in ds:
         id_d = {key:d[key] for key in id_vars}
         for column, value in d.items():
             if column not in id_vars:
-                yield dictplus(id_d, {'variable': column, 'value': value})
+                dd = {'variable': column, 'value': value}
+                dd.update(id_d)
+                yield dd
 
 def ipostprocess(df, id_vars):
     import pandas as pd
