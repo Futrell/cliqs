@@ -449,6 +449,7 @@ def main(cmd, *args):
         for row in rows:
             writer.writerow(row)
     elif cmd == "postprocess":
+        global pd
         import pandas as pd
         filenames = args
         dfs = map(lambda f: pd.read_csv(f, skipfooter=1), filenames)
