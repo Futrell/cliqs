@@ -450,7 +450,7 @@ def main(cmd, *args):
     elif cmd == "postprocess":
         import pandas as pd
         filenames = args
-        dfs = map(pd.read_csv, map(tap, filenames), skipfooter=1)
+        dfs = map(lambda f: pd.read_csv(f, skipfooter=1), filenames)
         rows = itertools.chain(
             ipostprocess(df, "lang length start_line".split())
             for df in dfs
