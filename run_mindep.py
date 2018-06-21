@@ -370,7 +370,7 @@ def imelt(ds, id_vars):
                 yield dictplus(id_d, {'variable': column, 'value': value})
 
 def ipostprocess(df, id_vars):
-    ds = map(pd.Series.to_dict, df.iterrows())
+    ds = (pd.Series.to_dict(row) for i, row in df.iterrows())
     melted = imelt(ds, id_vars)
     for d in melted:
         d['real'] = name_fn(d['variable'])
@@ -455,6 +455,7 @@ def main(cmd, *args):
             ipostprocess(df, "lang length start_line".split())
             for df in dfs
         )
+        print(next(rows))
         first_row = rfutils.first(rows)
         writer = csv.DictWriter(sys.stdout, first_row.keys())
         writer.writeheader()
