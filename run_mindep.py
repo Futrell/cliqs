@@ -455,7 +455,7 @@ def main(cmd, *args):
             ipostprocess(df, "lang length start_line".split())
             for df in dfs
         )
-        first_row = rfutils.first(row)
+        first_row = rfutils.first(rows)
         writer = csv.DictWriter(sys.stdout, first_row.keys())
         writer.writeheader()
         writer.writerow(first_row)
