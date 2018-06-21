@@ -364,7 +364,7 @@ def dictplus(d1, d2):
 
 def imelt(ds, id_vars):
     for d in ds:
-        id_d = {key:line[key] for key in id_vars}
+        id_d = {key:d[key] for key in id_vars}
         for column, value in d.items():
             if column not in id_vars:
                 yield dictplus(id_d, {'variable': column, 'value': value})
