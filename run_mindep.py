@@ -1,4 +1,4 @@
-from __future__ import division
+\from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
@@ -356,7 +356,26 @@ def build_it(lang, corpora=corpora.ud_corpora, parallel=False):
         },
         parallel=parallel,
     )
-    
+
+def dictplus(d1, d2):
+    d = d1.copy()
+    d.update(d2)
+    return d
+
+def imelt(ds, id_vars):
+    for d in ds:
+        id_d = {key:line[key] for key in id_vars}
+        for column, value in d.items():
+            if column not in id_vars:
+                yield dictplus(id_d, {'variable': column, 'value': value})
+
+def ipostprocess(df, id_vars):
+    ds = map(pd.Series.to_dict, df.iterrows())
+    melted = imelt(ds, id_vars)
+    for d in melted:
+        d['real'] = name_fn(d['variable'])
+        del d['variable']
+        yield d
 
 def postprocess(df):
     import pandas as pd
@@ -377,6 +396,7 @@ def name_fn(var):
         ('rand_deplen_fixed', 'fixed random'),
         ('rand_deplen_fullyfree_headfinal', 'nonprojective free head-consistent random'),        
         ('rand_deplen_fullyfree', 'nonprojective free random'),
+        ('rand_deplen_gd', 'gd random'),
         ('rand_deplen', 'free random'),        
         ('rand_known_order', 'known random'),
         ('min_deplen_headfixed', 'free head-fixed optimal'),
@@ -399,6 +419,10 @@ def name_fn(var):
 def pmap(f, xs):
     for future in as_completed(executor.map(f, xs)):
         yield future.result()
+
+def tap(x):
+    print(x, file=sys.stderr)
+    return x
 
 def main(cmd, *args):
     if cmd == "run":
@@ -426,9 +450,20 @@ def main(cmd, *args):
     elif cmd == "postprocess":
         import pandas as pd
         filenames = args
-        df = functools.reduce(pd.DataFrame.append, map(pd.read_csv, filenames))
-        new_df = postprocess(df)
-        new_df.to_csv(sys.stdout)
+        dfs = map(pd.read_csv, map(tap, filenames), skipfooter=1)
+        rows = itertools.chain(
+            ipostprocess(df, "lang length start_line".split())
+            for df in dfs
+        )
+        first_row = rfutils.first(row)
+        writer = csv.DictWriter(sys.stdout, first_row.keys())
+        writer.writeheader()
+        writer.writerow(first_row)
+        for row in rows:
+            writer.writerow(row)
+        #df = functoosl.reduce(pd.DataFrame.append, map(pd.read_csv, filenames))
+        #new_df = postprocess(df)
+        #new_df.to_csv(sys.stdout)
     else:
         rfutils.err("Unknown command: %s" % cmd)
         
