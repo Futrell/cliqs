@@ -4,9 +4,10 @@ library(lmerTest)
 library(broom)
 library(stringr)
 
-DATA_FILENAME = "mindep_20180208_fh_melted.csv"
+DATA_FILENAME = "mindep_20180309_lin_melted.csv"
 BASELINE = "real"
-COMPARISONS = c("free random", "fixed random per language", "free head-consistent random", "fixed head-consistent random", "nonprojective free random", "nonprojective free head-consistent random")
+#COMPARISONS = c("free random", "fixed random per language", "free head-consistent random", "fixed head-consistent random", "nonprojective free random", "nonprojective free head-consistent random")
+COMPARISONS = c("free random", "rand_proj_lin_r_lic", "rand_proj_lin_perplex", "rand_proj_lin_meaningsame")
 
 args <- commandArgs(TRUE)
 the_lang = args[1]
@@ -47,7 +48,7 @@ run_comparison = function(comparison) {
 }
 
 d = read_csv(DATA_FILENAME) %>%
-    select(-X1) %>%
+    #select(-X1) %>%
     filter(lang == the_lang) %>%
     filter(real != "Unnamed: ") %>%
     mutate(start_line = as.factor(start_line))
@@ -56,7 +57,7 @@ result = COMPARISONS %>%
     map(run_comparison) %>%
     reduce(bind_rows, tibble())
 
-outfilename = str_c(the_lang, "_model_coefficients_20180208.csv")
-
+outfilename = str_c(the_lang, "_model_coefficients_20180308.csv")
+print(outfilename)
 write.csv(result, file=outfilename)
 
