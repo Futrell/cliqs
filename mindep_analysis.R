@@ -9,6 +9,8 @@ BASELINE = "real"
 #COMPARISONS = c("free random", "fixed random per language", "free head-consistent random", "fixed head-consistent random", "nonprojective free random", "nonprojective free head-consistent random")
 COMPARISONS = c("free random", "rand_proj_lin_r_lic", "rand_proj_lin_perplex", "rand_proj_lin_meaningsame")
 
+set.seed(0)
+
 args <- commandArgs(TRUE)
 the_lang = args[1]
 
