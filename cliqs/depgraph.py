@@ -461,7 +461,7 @@ def is_descendent(s, word_id_1, word_id_2):
 
 
 def is_tree(s):
-    degrees = Counter(degree for n, degree in s.in_degree())
+    degrees = Counter(degree for n, degree in dict(s.in_degree()).items())
     return set(degrees.keys()) == {0, 1} and degrees[0] == 1 and degrees[1] > 0
 
 
@@ -477,7 +477,7 @@ def block_endpoints_of(s):
     
     # For each node n in the precedence order of D, we follow the shortest path
     # from the node current to n.
-    for node in s.nodes():
+    for node in sorted(s.nodes()):
         # To determine this path, we compute the lowest common ancestor lca of
         # the two nodes, using a set of markings on the nodes. At the beginning
         # of each iteration of the for loop, all ancestors of current (including
