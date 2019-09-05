@@ -81,9 +81,11 @@ ud_corpora = {
 #    for lang in ud_corpus_names
 #}
 
+sud_langs = "aii akk am ar be bg bm br bxr ca cop cs cu cy da de el en es et eu fa fi fo fr fro ga gl got grc gun he hi hr hsb hu hy id it ja kk kmr ko kpv krl la lt lv lzh mr mt myv nl no orv pcm pl pt qhe ro ru sa sk sl sme sr sv swl ta te th tl tr ug uk ur vi wbp wo yo yue zh".split()
+
 sud_corpora = {
     lang : UniversalDependency1Treebank(sud_path_template % lang)
-    for lang in sud_corpus_names
+    for lang in sud_langs
 }
     
 gd_corpora = [
