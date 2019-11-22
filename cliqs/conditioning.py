@@ -92,6 +92,7 @@ def get_attr(attr):
 
 get_pos = get_attr('pos')
 get_word = get_attr('word')
+get_lemma = get_attr('lemma')
 
 def get_pos2(sentence, n):
     pos2 = sentence.node[n].get('pos2')
