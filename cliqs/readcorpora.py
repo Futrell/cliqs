@@ -7,6 +7,7 @@ from .compat import *
 
 import os
 import re
+import sys
 import gzip
 import codecs
 
@@ -142,7 +143,10 @@ class DependencyTreebank(object):
         self._sentences_in_memory_flags = kwds
 
     def read(self):
-        return myopen(self.filename)
+        if self.filename is None:
+            return sys.stdin
+        else:
+            return myopen(self.filename)
 
     def sentences(self, verbose=False,
                   strict=False,
