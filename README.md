@@ -1,7 +1,5 @@
 # Crosslinguistic Investigations in Quantitative Syntax (CLIQS)
 
-[![Build Status](https://travis-ci.org/Futrell/cliqs.svg?branch=master)](https://travis-ci.org/Futrell/cliqs)
-
 This is code for studying quantitative syntax using dependency corpora.
 
 It is written for Python 3.5, and has been tested to work in Python 2.7.
@@ -10,6 +8,10 @@ It is written for Python 3.5, and has been tested to work in Python 2.7.
 
 `pip install -r requirements.txt` for basic functionality.
 Additionally, `pip install -r optrequirements.txt` for optional dependencies used for parallelization and visualization.
+
+### Setting up corpora
+Supposing you have your Universal Dependencies treebanks, as downloaded from the UD website, in a directory `$UD_DIR`. Copy the file `process_ud.sh` into `$UD_DIR` and run it with `sh process_ud.sh`. This will rename the directories into the format that `cliqs` expects. Then modify the path in `cliqs/corpora.py` to reflect your UD path.
+
 
 ### Example
 
