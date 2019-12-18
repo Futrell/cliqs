@@ -1,28 +1,20 @@
+#!/usr/bin/env bash
 # Make concatenated files; make shortcodes with iso codes
 
-for lang in `ls . | grep UD`; do
-    cd $lang;
-    cat *-ud-*.conllu > all.conllu;
-    code=`ls | grep "ud-dev.conllu" | sed "s/-.*//g"`;
-    cd ..;
+for lang in `ls . | grep UD_`; do
+    echo $lang
+    pushd $lang
+        cat *-ud-*.conllu > all.conllu;
+        code=`ls | grep "ud-test.conllu" | sed "s/-.*//g"`
+        popd
     ln -s $lang $code;
 done
 
-# Choose which corpora will be the "main" one for languages.
-# Override links from above.
+# For each language, take the largest corpus to be its representative
 
-ln -s UD_Arabic-NYUAD ar
-ln -s UD_Arabic ar_ud
+CHOSEN_CORPORA=$(wc -l */all.conllu | grep -v UD | grep -v total | sed "s/\/all.conllu//g" | sed "s/_/ /g" | sort -r -nk1,1 | sort -sk 2,2 | awk -F" " '{if (l != $2) { print $2"_"$3; l=$2 }}')
 
-ln -s UD_Ancient_Greek-PROIEL grc
-ln -s UD_Ancient_Greek grc_perseus
-
-ln -s UD_Latin-PROIEL la
-ln -s UD_Latin la_perseus
-
-ln -s UD_Russian-SynTagRus ru
-ln -s UD_Russian ru_ud
-
-ln -s UD_Spanish-AnCora es
-ln -s UD_Spanish es_ud
-
+for corpus in $CHOSEN_CORPORA; do
+    lang=$(awk -F"_" '{print $1}' <<< $corpus)
+    ln -s $corpus $lang;
+done
