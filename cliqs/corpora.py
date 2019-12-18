@@ -21,12 +21,12 @@ except OSError:
 
 # Replace with your username and local directory to make things speedier    
 if username == 'canjo':
-    data_dir = "/home/canjo/data/cliqs/"
+    data_dir = "/Users/canjo/data/cliqs/"
 else:
     data_dir = "http://tedlab.mit.edu/datasets/cliqs/"
 
 
-ud_path = "ud-treebanks-v2.1/"
+ud_path = "ud-treebanks-v2.5/"
 sud_path = "sud-treebanks-v2.4_2019_08_13/"
 udt_path_template = data_dir + "universal_treebanks_v1.0/%s/%s-universal.conll"
 udt2_path_template = data_dir + "utb2_std/%s/all.conll"
