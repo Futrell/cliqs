@@ -165,13 +165,13 @@ def remove_function_words(sentence, verbose=VERBOSE):
     
 PUNCTUATION_POS = frozenset(". punc punct PUNC PUNCT wp".split())
 PUNCTUATION_RELS = frozenset("punct p WP".split())
-def remove_punct_from_sentence(sentence, verbose=VERBOSE):
+def remove_punct_from_sentence(sentence, verbose=VERBOSE, strict=True):
     return remove_from_sentence(
         sentence,
         badpos=PUNCTUATION_POS,
         badrel=PUNCTUATION_RELS,
-        verbose=VERBOSE,
-        strict=True,
+        verbose=verbose,
+        strict=strict,
     )
 
 def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False): 
@@ -198,20 +198,9 @@ def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False
     for punct, word2, deptype in punctuation_as_head:
         # word1 -a-> punct -b-> word2
         # We want to remove punct and the relation -a->, and connect word1 to word2 with -b->
+        # the result should be word1 -b-> word2
         # In the case of word -> punct -> punct -> word, remove all the intervening puncts.
         # Do not do this if word1 is root.
-        if sentence.node[punct].get('pos') not in badrel:
-            if verbose and strict:
-                print(
-                    "Head with illegal relation type! {}-{}->, {}".format(
-                        sentence.node[punct].get('pos'),
-                        deptype,
-                        str(sentence.start_line)
-                    ),
-                    file=sys.stderr
-                )
-            if strict:
-                return None
         heads = heads_of(sentence, punct)
         if len(heads) > 1:
             if verbose:
@@ -269,8 +258,9 @@ def test_remove_punct_from_sentence():
     s.node[6]['pos'] = 'PUNCT'
     s.node[7]['pos'] = 'HELLO'
     s.whatever = 'test'
+    s.start_line = 0
 
-    s2 = immutably(remove_punct_from_sentence)(s)
+    s2 = immutably(remove_punct_from_sentence)(s, verbose=True)
     assert set(s2.edges(data='deptype')) == {
         (0, 2, 'root'),
         (2, 1, 'nsubj'),
