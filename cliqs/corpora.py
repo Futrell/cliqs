@@ -59,7 +59,7 @@ udt_corpora = {
     "sv" : UDTDependencyTreebank(udt2_path_template % "sv"),
 }
 
-ud_langs = "af ar be bg bxr ca cop cs cu da de el en es et eu fa fi fr ga gl got grc he hi hr hsb hu id it ja kk kmr ko la lt lv mr nl no_bokmaal no_nynorsk pl pt pt_br ro ru sa sk sl sme sr sv ta te tr ug uk ur vi yue zh".split()
+ud_langs = "af aii akk am ar be bg bho bm br bxr ca cop cs cu cy da de el en es et eu fa fi fo fr fro ga gd gl got grc gsw gun he hi hr hsb hu hy id it ja kk kmr ko koi kpv krl la lt lv lzh mdf mr mt myv nl no olo orv pcm pl pt qhe ro ru sa sk sl sme sms sr sv swl ta te th tl tr ug uk ur vi wbp wo yo yue zh".split()
 
 ud_corpus_names = [
     str(path.Path(x).basename()) for x in glob.glob(data_dir + ud_path + "UD_*")
