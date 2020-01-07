@@ -102,19 +102,29 @@ parallel_corpora = {
     for lang in pud_langs
 }
 
+def corpus_path(directory, lang, which):
+    matches = glob.glob(data_dir + ud_path + "%s/*-ud-%s.conllu" % (lang, which))
+    if len(matches) == 1:
+        return matches[0]
+    else:
+        return None
+
 ud_train_corpora = {
-    lang : UniversalDependency1Treebank(ud_train_template % (lang, lang))
+    lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'train'))
     for lang in ud_corpora
+    if corpus_path(data_dir + ud_path, lang, 'train') is not None
 }
 
 ud_dev_corpora = {
-    lang : UniversalDependency1Treebank(ud_dev_template % (lang, lang))
+    lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'dev'))    
     for lang in ud_corpora
+    if corpus_path(data_dir + ud_path, lang, 'dev') is not None    
 }
 
 ud_test_corpora = {
-    lang : UniversalDependency1Treebank(ud_test_template % (lang, lang))
+    lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'test'))
     for lang in ud_corpora
+    if corpus_path(data_dir + ud_path, lang, 'test') is not None    
 }
 
 proiel_torot_langs = "orv cu xcl got grc la".split()
