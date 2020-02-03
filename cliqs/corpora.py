@@ -76,10 +76,10 @@ ud_corpora = {
     for lang in ud_langs
 }
 
-#ud_corpora = {
-#    lang : UniversalDependency1Treebank(ud_path_template % lang)
-#    for lang in ud_corpus_names
-#}
+all_ud_corpora = {
+    lang : UniversalDependency1Treebank(ud_path_template % lang)
+    for lang in ud_corpus_names
+}
 
 sud_langs = "af aii akk am ar be bg bm br bxr ca cop cs cu cy da de el en es et eu fa fi fo fr fro ga gl got grc gun he hi hr hsb hu hy id it ja kk kmr ko kpv krl la lt lv lzh mr mt myv nl no orv pcm pl pt qhe ro ru sa sk sl sme sr sv swl ta te th tl tr ug uk ur vi wbp wo yo yue zh".split()
 
@@ -123,10 +123,29 @@ ud_dev_corpora = {
 
 ud_test_corpora = {
     lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'test'))
-    for lang in ud_corpora
+    for lang in ud_langs
     if corpus_path(data_dir + ud_path, lang, 'test') is not None    
 }
 
+
+all_ud_train_corpora = {
+    lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'train'))
+    for lang in all_ud_corpora
+    if corpus_path(data_dir + ud_path, lang, 'train') is not None
+}
+
+all_ud_dev_corpora = {
+    lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'dev'))    
+    for lang in all_ud_corpora
+    if corpus_path(data_dir + ud_path, lang, 'dev') is not None    
+}
+
+all_ud_test_corpora = {
+    lang : UniversalDependency1Treebank(corpus_path(data_dir + ud_path, lang, 'test'))
+    for lang in all_ud_corpora
+    if corpus_path(data_dir + ud_path, lang, 'test') is not None    
+}
+    
 proiel_torot_langs = "orv cu xcl got grc la".split()
 
 proiel_torot_corpora = {
