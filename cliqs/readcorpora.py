@@ -60,12 +60,13 @@ class DepSentence(nx.DiGraph):
     Contains extra information on data sources.
 
     """
-    def __init__(self, filename=None, start_line=None, end_line=None, ch=None, high=None):
+    def __init__(self, filename=None, start_line=None, end_line=None, ch=None, high=None, text=None):
         self.start_line = start_line
         self.end_line = end_line
         self.filename = filename
         self.ch = ch
         self.high = high
+        self.text = text
         super(DepSentence, self).__init__()
 
     def __repr__(self):
@@ -288,6 +289,7 @@ class CoNLLDependencyTreebank(DependencyTreebank):
                                lines,
                                allow_multihead=False,
                                verbose=False):
+        lines = list(lines)
         sentence = DepSentence(self.filename)
         for line in lines:
             if not line.startswith("#"):
@@ -430,8 +432,12 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
                                verbose=False):
         lines = list(lines)
         sentence = DepSentence(filename=self.filename)
+        text = None
         for line in lines:
-            if not line.startswith("#"):
+            if line.startswith("# text = "):
+                text = line.strip("# text =")
+                sentence.text = text
+            elif not line.startswith("#"):
                 parts = line.split("\t")
                 if "-" in parts[0]:
                     word_ids, info = self.analyze_compound_line(parts,

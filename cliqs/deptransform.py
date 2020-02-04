@@ -174,8 +174,10 @@ def remove_punct_from_sentence(sentence, verbose=VERBOSE, strict=True):
         strict=strict,
     )
 
-def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False): 
+def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=True): 
     """ Destructively remove punctuation from the given sentence. """
+    num_roots = len(list(roots_of(sentence)))
+    
     edges_to_die = [
         (h,d,t) for h,d,t in sentence.edges(data='deptype')
         if t.split(":")[0] in badrel # TODO make sure it's : not /
@@ -235,7 +237,10 @@ def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=False
             print("Empty sentence! {}".format(str(sentence.start_line)), file=sys.stderr)
         return None
 
-    assert len(list(roots_of(sentence))) == 1
+    if strict and len(list(roots_of(sentence))) != num_roots:
+        if verbose:
+            print("Removing punctuation caused multiple roots! {}".format(str(sentence.start_line), file=sys.stderr))
+        return None
 
     return renumber_words(sentence)
 
