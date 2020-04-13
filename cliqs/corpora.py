@@ -7,7 +7,6 @@ from .compat import *
 
 import os
 import glob
-import path
 import socket
 
 import networkx as nx
@@ -62,11 +61,11 @@ udt_corpora = {
 ud_langs = "af aii akk am ar be bg bho bm br bxr ca cop cs cu cy da de el en es et eu fa fi fo fr fro ga gd gl got grc gsw gun he hi hr hsb hu hy id it ja kk kmr ko koi kpv krl la lt lv lzh mdf mr mt myv nl no olo orv pcm pl pt qhe ro ru sa sk sl sme sms sr sv swl ta te th tl tr ug uk ur vi wbp wo yo yue zh".split()
 
 ud_corpus_names = [
-    str(path.Path(x).basename()) for x in glob.glob(data_dir + ud_path + "UD_*")
+    str(os.path.basename(x) for x in glob.glob(data_dir + ud_path + "UD_*")
 ]
 
 sud_corpus_names = [
-    str(path.Path(x).basename()) for x in glob.glob(data_dir + sud_path + "SUD_*")
+    str(os.path.basename(x) for x in glob.glob(data_dir + sud_path + "SUD_*")
 ]
 
 pud_langs = "ar_pud cs_pud de_pud en_pud es_pud fi_pud fr_pud hi_pud it_pud ja_pud pt_pud ru_pud sv_pud tr_pud zh_pud".split()
