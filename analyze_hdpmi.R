@@ -97,12 +97,10 @@ process_lang_without_baseline = function(the_lang) {
    filter(lin == "real")
           
  m = lmer(deplen.c ~  
-          length2.c*pmi.c
+            pmi.c
           + (1 + pmi.c | sentence_no_lang),
-          #+ (1 + pmi.c | lang),
         data=d, REML=F)
  m0 = lmer(deplen.c ~  
-          length2.c + pmi.c + length2.c:pmi.c  
           + (1 + pmi.c | sentence_no_lang),
         data=d, REML=F)
  
