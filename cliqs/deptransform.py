@@ -61,14 +61,14 @@ def collapse_flat(sentence, rels=FLAT_RELS, verbose=VERBOSE):
         ])
         if flats and sequence_continuous(flats):
             words = sorted(flats + [h])
-            new_word = " ".join(sentence.node[d]['word'] for d in words)
-            sentence.node[h]['word'] = new_word
+            new_word = " ".join(sentence._node[d]['word'] for d in words)
+            sentence._node[h]['word'] = new_word
             nodes_hitlist.extend(flats)
             edges_hitlist.extend((h,d) for d in flats)
             for d in flats:
                 for _, dd, dt in sentence.out_edges(d, data=True):
                     if dt['deptype'] not in rels:
-                        sentence.add_edge(h, dd, dt)
+                        sentence.add_edge(h, dd, **dt)
         elif not sequence_continuous(flats) and verbose:
             print("Discontinuous flat at line %s node %s" % (
                 sentence.start_line, str(h)
@@ -93,63 +93,63 @@ def test_collapse_flat():
     # most basic case
     s = nx.DiGraph([(0, 1), (0, 2), (0, 3), (0, 4)])
     for i, letter in enumerate("abcde"):
-        s.node[i]['word'] = letter
-    s.edge[0][1]['deptype'] = 'flat'
-    s.edge[0][2]['deptype'] = 'flat'
-    s.edge[0][3]['deptype'] = 'flat'
-    s.edge[0][4]['deptype'] = 'flat'
+        s._node[i]['word'] = letter
+    s._edge[0][1]['deptype'] = 'flat'
+    s._edge[0][2]['deptype'] = 'flat'
+    s._edge[0][3]['deptype'] = 'flat'
+    s._edge[0][4]['deptype'] = 'flat'
 
     s2 = immutably(collapse_flat)(s, rels={'flat'})
     assert len(s2) == 1
-    assert s2.node[0]['word'] == "a b c d e"
+    assert s2._node[0]['word'] == "a b c d e"
 
 
     # this scenario should not arise in UD 2.1; but it does.
     # see af/all.conllu line 4867
     s = nx.DiGraph([(0, 1), (1, 2), (2, 3)])
     for i, letter in enumerate("abcd"):
-        s.node[i]['word'] = letter
-    s.edge[0][1]['deptype'] = 'flat'
-    s.edge[1][2]['deptype'] = 'flat'
-    s.edge[2][3]['deptype'] = 'flat'
+        s._node[i]['word'] = letter
+    s._edge[0][1]['deptype'] = 'flat'
+    s._edge[1][2]['deptype'] = 'flat'
+    s._edge[2][3]['deptype'] = 'flat'
 
     s = nx.DiGraph([(3, 2), (2, 1), (1, 0)])
     for i, letter in enumerate("abcd"):
-        s.node[i]['word'] = letter
-    s.edge[3][2]['deptype'] = 'flat'
-    s.edge[2][1]['deptype'] = 'flat'
-    s.edge[1][0]['deptype'] = 'flat'
+        s._node[i]['word'] = letter
+    s._edge[3][2]['deptype'] = 'flat'
+    s._edge[2][1]['deptype'] = 'flat'
+    s._edge[1][0]['deptype'] = 'flat'
     
     s2 = immutably(collapse_flat)(s, rels={'flat'})
     # also bad, but occurs in af/all.conllu line 18801
     assert len(s2) == 1
-    assert s2.node[0]['word'] == "a b c d"
+    assert s2._node[0]['word'] == "a b c d"
 
     s = nx.DiGraph([(3, 0), (3, 1), (3, 2)])
     for i, letter in enumerate("abcd"):
-        s.node[i]['word'] = letter
-    s.edge[3][0]['deptype'] = 'flat'
-    s.edge[3][1]['deptype'] = 'flat'
-    s.edge[3][2]['deptype'] = 'flat'
+        s._node[i]['word'] = letter
+    s._edge[3][0]['deptype'] = 'flat'
+    s._edge[3][1]['deptype'] = 'flat'
+    s._edge[3][2]['deptype'] = 'flat'
     
     s2 = immutably(collapse_flat)(s, rels={'flat'})
     # might as well try this possibility
     assert len(s2) == 1
-    assert s2.node[0]['word'] == "a b c d"
+    assert s2._node[0]['word'] == "a b c d"
 
     s = nx.DiGraph([(0, 1), (0, 2), (0, 3), (3, 4)])
     for i, letter in enumerate("abcde"):
-        s.node[i]['word'] = letter
-    s.edge[0][1]['deptype'] = 'flat'
-    s.edge[0][2]['deptype'] = 'flat'
-    s.edge[0][3]['deptype'] = 'flat'
-    s.edge[3][4]['deptype'] = 'other'
+        s._node[i]['word'] = letter
+    s._edge[0][1]['deptype'] = 'flat'
+    s._edge[0][2]['deptype'] = 'flat'
+    s._edge[0][3]['deptype'] = 'flat'
+    s._edge[3][4]['deptype'] = 'other'
 
     # shouldn't happen in UD, but nonetheless it does
     s2 = immutably(collapse_flat)(s, rels={'flat'})
     assert len(s2) == 2
-    assert s2.node[0]['word'] == "a b c d"
-    assert s2.edge[0][1]['deptype'] == 'other'
+    assert s2._node[0]['word'] == "a b c d"
+    assert s2._edge[0][1]['deptype'] == 'other'
 
 # remove everything except nouns, verbs, adjectives, adverbs, numerals,
 FW_POS = frozenset("ADP AUX CCONJ DET PART PRON SCONJ PUNCT".split())
@@ -203,7 +203,7 @@ def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=True)
         # the result should be word1 -b-> word2
         # In the case of word -> punct -> punct -> word, remove all the intervening puncts.
         # Do not do this if word1 is root.
-        heads = heads_of(sentence, punct)
+        heads = list(heads_of(sentence, punct))
         if len(heads) > 1:
             if verbose:
                 print(
@@ -220,10 +220,10 @@ def remove_from_sentence(sentence, badrel, badpos, verbose=VERBOSE, strict=True)
                 )
             return None
         else:
-            while (sentence.node[word1].get('pos') in badpos
+            while (sentence._node[word1].get('pos') in badpos
                               or deptype.split(":")[0] in badrel):
                 head_of_word1 = head_of(sentence, word1)
-                deptype = sentence.edge[head_of_word1][word1].get('deptype')
+                deptype = sentence._edge[head_of_word1][word1].get('deptype')
                 word1 = head_of_word1
         sentence.add_edge(word1, word2, deptype=deptype)
         sentence.remove_edge(punct, word2)
@@ -255,13 +255,13 @@ def test_remove_punct_from_sentence():
         (4, 6, {'deptype': 'punct'}),
         (6, 7, {'deptype': 'hello'}),
     ])
-    s.node[1]['pos'] = 'NN'
-    s.node[2]['pos'] = 'PUNCT'
-    s.node[3]['pos'] = 'VV'
-    s.node[4]['pos'] = 'PRP'
-    s.node[5]['pos'] = 'PUNCT'
-    s.node[6]['pos'] = 'PUNCT'
-    s.node[7]['pos'] = 'HELLO'
+    s._node[1]['pos'] = 'NN'
+    s._node[2]['pos'] = 'PUNCT'
+    s._node[3]['pos'] = 'VV'
+    s._node[4]['pos'] = 'PRP'
+    s._node[5]['pos'] = 'PUNCT'
+    s._node[6]['pos'] = 'PUNCT'
+    s._node[7]['pos'] = 'HELLO'
     s.whatever = 'test'
     s.start_line = 0
 
@@ -272,10 +272,10 @@ def test_remove_punct_from_sentence():
         (2, 3, 'dobj'),
         (3, 4, 'hello'),
     }
-    assert s2.node[1]['pos'] == 'NN'
-    assert s2.node[2]['pos'] == 'VV'
-    assert s2.node[3]['pos'] == 'PRP'
-    assert s2.node[4]['pos'] == 'HELLO'
+    assert s2._node[1]['pos'] == 'NN'
+    assert s2._node[2]['pos'] == 'VV'
+    assert s2._node[3]['pos'] == 'PRP'
+    assert s2._node[4]['pos'] == 'HELLO'
     assert s2.whatever == 'test' # all attributes maintained
                       
 def renumber_words(sentence):
@@ -300,13 +300,13 @@ def test_reverse_content_head_simple():
         (5, 7, {'deptype': 'relcl'}), # man -relcl-> died
         (7, 6, {'deptype': 'mark'}), # died -mark-> that
     ])
-    s.node[1]['pos'] = 'ADP' # on
-    s.node[2]['pos'] = 'NOUN'  # Sunday
-    s.node[3]['pos'] = 'PRON' # I
-    s.node[4]['pos'] = 'VERB' # was
-    s.node[5]['pos'] = 'NOUN'  # man
-    s.node[6]['pos'] = 'SCONJ' # that
-    s.node[7]['pos'] = 'VERB' # died
+    s._node[1]['pos'] = 'ADP' # on
+    s._node[2]['pos'] = 'NOUN'  # Sunday
+    s._node[3]['pos'] = 'PRON' # I
+    s._node[4]['pos'] = 'VERB' # was
+    s._node[5]['pos'] = 'NOUN'  # man
+    s._node[6]['pos'] = 'SCONJ' # that
+    s._node[7]['pos'] = 'VERB' # died
 
     s2 = immutably(reverse_content_head)(s, 'case', high_rels={})
     assert set(s2.edges(data='deptype')) == {
@@ -404,17 +404,17 @@ def lift_head(sentence, n1, n2, high_rels):
     Destructive.
     """
     for h in heads_of(sentence, n1):
-        r1 = sentence.edge[h][n1]['deptype']
+        r1 = sentence._edge[h][n1]['deptype']
         sentence.remove_edge(h, n1)
         sentence.add_edge(h, n2, deptype=r1)
-    r2 = sentence.edge[n1][n2]['deptype']
+    r2 = sentence._edge[n1][n2]['deptype']
     sentence.remove_edge(n1, n2)
     sentence.add_edge(n2, n1, deptype=r2)
     # at this point, all old dependents of n1 are still attached to n1.
     # Now lift the things in high_rels:
     for d in dependents_of(sentence, n1):
         if attach_match(sentence, high_rels, n1, d):
-            r = sentence.edge[n1][d]['deptype']
+            r = sentence._edge[n1][d]['deptype']
             sentence.remove_edge(n1, d)
             sentence.add_edge(n2, d, deptype=r)
     return sentence
@@ -439,7 +439,7 @@ def test_lift_head():
 def attach_match(sentence, rels, n1, n2):
     # this could be expanded as a general pattern matching DSL...
     # for now, just match on deptype
-    rel = sentence.edge[n1][n2]['deptype']
+    rel = sentence._edge[n1][n2]['deptype']
     return rel in rels or rel.split(":")[0] in rels
 
 def reversible_paths(sentence, rel, verbose=VERBOSE):

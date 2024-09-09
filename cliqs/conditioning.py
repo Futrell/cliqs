@@ -30,11 +30,13 @@ def f_name(f):
     except AttributeError:
         return f.__name__
 
+
 def phrase_f(f):
     result = lambda sentence, phrase, h: [f(sentence, n, h) for n in phrase]
     name = "PHRASE_XX_%s_XX" % f_name(f)
     result.__name__ = str(name)
     result.__qualname__ = str(name)
+
     return result
 
 def dependent_f(h_f, d_f, both_f):
@@ -44,6 +46,9 @@ def dependent_f(h_f, d_f, both_f):
     name = "dependent_f(%s)" % ",".join(map(f_name, [h_f, d_f, both_f]))
     result.__name__ = str(name)
     result.__qualname__ = str(name)
+
+
+    
     return result
 
 def edge_f(h_f, d_f, both_f):
@@ -87,7 +92,7 @@ def get_dt(sentence, n):
 
 def get_attr(attr):
     def getter(sentence, n):
-        return sentence.node[n].get(attr)
+        return sentence._node[n].get(attr)
     return getter
 
 get_pos = get_attr('pos')
@@ -95,7 +100,7 @@ get_word = get_attr('word')
 get_lemma = get_attr('lemma')
 
 def get_pos2(sentence, n):
-    pos2 = sentence.node[n].get('pos2')
+    pos2 = sentence._node[n].get('pos2')
     if pos2 is None or pos2 == "_":
         return get_attr('pos')(sentence, n)
     else:

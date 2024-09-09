@@ -84,8 +84,8 @@ class DepSentence(nx.DiGraph):
 
     def add_word(self, word_id, word_attr, head_id, rel_attr):
         self.add_node(word_id)
-        self.node[word_id].update(word_attr)
-        self.node[word_id]['id'] = word_id
+        self._node[word_id].update(word_attr)
+        self._node[word_id]['id'] = word_id
         self.add_edge(head_id, word_id, deptype=rel_attr)
 
 
@@ -444,7 +444,7 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
                                                                 verbose=verbose)
                     for word_id in word_ids:
                         sentence.add_node(word_id)
-                        sentence.node[word_id].update(info)
+                        sentence._node[word_id].update(info)
                 else:
                     # first analyze line as if it was CoNLL
                     word_parts = self.analyze_line(parts, verbose=verbose)
@@ -454,9 +454,9 @@ class UniversalDependency1Treebank(CoNLLDependencyTreebank):
 
                     # then do extra stuff for CoNLL-U
                     word_id = word_parts[0]
-                    word = sentence.node[word_id]
+                    word = sentence._node[word_id]
                     if 'form' not in word:
-                        word = sentence.node[word_id]
+                        word = sentence._node[word_id]
                         word['form'] = word['word']
                         word['part_of'] = (word_id,)
 

@@ -43,7 +43,7 @@ def get_attr(attr):
     """ Produce a function which gets the given attribute of a sentence at a
     node, returning None if the attribute cannot be found. """
     def get(s, n):
-        return s.node[n].get(attr)
+        return s._node[n].get(attr)
     return get
 
 
@@ -51,7 +51,7 @@ def get_attr(attr):
 def attr_of(attr, s):
     """ Reduce a sentence to an iterable of attribute values,
     one for each non-root node. """
-    return [s.node[n].get(attr, None) for n in sorted(s.nodes())]
+    return [s._node[n].get(attr, None) for n in sorted(s.nodes())]
 
 
 words_of = functools.partial(attr_of, 'word')
@@ -78,7 +78,7 @@ def test_phrase_of():
 def draw_sentence(s, **kwds):
     import nxpd
     for node in s.nodes():
-        attr = s.node[node]
+        attr = s._node[node]
         if 'word' not in attr:
             attr['label'] = str(node)
         elif attr['word'].startswith('_'):
@@ -195,7 +195,7 @@ def sentence_to_conllu(s):
     def gen():
         for n in sorted(s.nodes()):
             if n != 0:
-                nodedict = s.node[n]
+                nodedict = s._node[n]
                 head = head_of(s, n)
                 yield (
                     str(n),
